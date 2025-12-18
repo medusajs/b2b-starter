@@ -1,0 +1,63 @@
+{
+  "name": "@b2b-starter/backend",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A starter for Medusa B2B projects.",
+  "author": "Medusa (https://medusajs.com)",
+  "license": "MIT",
+  "keywords": [
+    "sqlite",
+    "postgres",
+    "typescript",
+    "ecommerce",
+    "headless",
+    "medusa"
+  ],
+  "scripts": {
+    "build": "medusa build",
+    "seed": "medusa exec ./src/scripts/seed.ts",
+    "start": "medusa start",
+    "dev": "medusa develop",
+    "clean": "rm -rf .medusa/server .medusa/admin node_modules",
+    "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
+    "test:integration:modules": "TEST_TYPE=integration:modules NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit",
+    "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
+  },
+  "dependencies": {
+    "@b2b-starter/types": "workspace:*",
+    "@medusajs/admin-sdk": "2.12.3",
+    "@medusajs/cli": "2.12.3",
+    "@medusajs/admin-shared": "2.12.3",
+    "@medusajs/dashboard": "2.12.3",
+    "@medusajs/framework": "2.12.3",
+    "@medusajs/js-sdk": "2.12.3",
+    "@medusajs/medusa": "2.12.3",
+    "@medusajs/ui": "4.0.31",
+    "zod": "3.22.4"
+  },
+  "devDependencies": {
+    "@medusajs/test-utils": "2.12.3",
+    "@medusajs/ui-preset": "2.12.3",
+    "@swc/core": "^1.5.7",
+    "@swc/jest": "^0.2.36",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "jest": "^29.7.0",
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3",
+    "vite": "^5.2.11"
+  },
+  "dependenciesMeta": {
+    "@b2b-starter/types": {
+      "injected": true
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

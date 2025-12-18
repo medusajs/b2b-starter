@@ -1,0 +1,74 @@
+{
+  "name": "@b2b-starter/types",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./company": {
+      "types": "./dist/company/index.d.ts",
+      "import": "./dist/company/index.js",
+      "require": "./dist/company/index.js"
+    },
+    "./company/*": {
+      "types": "./dist/company/*.d.ts",
+      "import": "./dist/company/*.js",
+      "require": "./dist/company/*.js"
+    },
+    "./quote": {
+      "types": "./dist/quote/index.d.ts",
+      "import": "./dist/quote/index.js",
+      "require": "./dist/quote/index.js"
+    },
+    "./quote/*": {
+      "types": "./dist/quote/*.d.ts",
+      "import": "./dist/quote/*.js",
+      "require": "./dist/quote/*.js"
+    },
+    "./approval": {
+      "types": "./dist/approval/index.d.ts",
+      "import": "./dist/approval/index.js",
+      "require": "./dist/approval/index.js"
+    },
+    "./approval/*": {
+      "types": "./dist/approval/*.d.ts",
+      "import": "./dist/approval/*.js",
+      "require": "./dist/approval/*.js"
+    },
+    "./shipping-options": {
+      "types": "./dist/shipping-options/index.d.ts",
+      "import": "./dist/shipping-options/index.js",
+      "require": "./dist/shipping-options/index.js"
+    },
+    "./shipping-options/*": {
+      "types": "./dist/shipping-options/*.d.ts",
+      "import": "./dist/shipping-options/*.js",
+      "require": "./dist/shipping-options/*.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "dev": "tsc -p tsconfig.build.json --watch"
+  },
+  "peerDependencies": {
+    "@medusajs/framework": "2.12.3",
+    "@medusajs/types": "2.12.3"
+  },
+  "devDependencies": {
+    "@medusajs/framework": "2.12.3",
+    "@medusajs/types": "2.12.3",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

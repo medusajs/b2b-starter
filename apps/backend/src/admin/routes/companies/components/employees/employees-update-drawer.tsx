@@ -4,7 +4,7 @@ import {
   AdminUpdateEmployee,
   QueryCompany,
   QueryEmployee,
-} from "@b2b-starter/types";
+} from "../../../../../types";
 import { useUpdateEmployee } from "../../../../hooks/api";
 
 export function EmployeesUpdateDrawer({

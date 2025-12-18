@@ -6,7 +6,7 @@ import {
 } from "@medusajs/workflows-sdk";
 import { APPROVAL_MODULE } from "../../../modules/approval";
 import { COMPANY_MODULE } from "../../../modules/company";
-import { ModuleCreateCompany } from "@b2b-starter/types";
+import { ModuleCreateCompany } from "../../../types";
 import { createApprovalSettingsStep } from "../../../workflows/approval/steps/create-approval-settings";
 import { createCompaniesStep } from "../steps";
 

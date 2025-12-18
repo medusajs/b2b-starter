@@ -1,6 +1,6 @@
 import { WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 import { createWorkflow } from "@medusajs/workflows-sdk";
-import { ModuleDeleteCompany } from "@b2b-starter/types";
+import { ModuleDeleteCompany } from "../../../types";
 import { deleteApprovalSettingsStep } from "../../approval/steps/delete-approval-settings";
 import { deleteCompaniesStep } from "../steps";
 

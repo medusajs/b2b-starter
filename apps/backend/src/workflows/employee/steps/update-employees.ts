@@ -5,7 +5,7 @@ import {
   ICompanyModuleService,
   ModuleUpdateEmployee,
   QueryEmployee,
-} from "@b2b-starter/types";
+} from "../../../types";
 
 export const updateEmployeesStep = createStep(
   "update-employees",

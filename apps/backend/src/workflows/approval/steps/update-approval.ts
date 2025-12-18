@@ -5,7 +5,7 @@ import {
   IApprovalModuleService,
   ModuleApproval,
   ModuleUpdateApproval,
-} from "@b2b-starter/types";
+} from "../../../types";
 
 export const updateApprovalStep = createStep(
   "update-approval",

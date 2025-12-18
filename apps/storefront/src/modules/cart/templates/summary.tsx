@@ -11,7 +11,7 @@ import LocalizedClientLink from "@/modules/common/components/localized-client-li
 import { RequestQuoteConfirmation } from "@/modules/quotes/components/request-quote-confirmation"
 import { RequestQuotePrompt } from "@/modules/quotes/components/request-quote-prompt"
 import { B2BCustomer } from "@/types"
-import { ApprovalStatusType } from "@b2b-starter/types/approval"
+import { ApprovalStatusType } from "@/types/approval"
 import { ExclamationCircle } from "@medusajs/icons"
 import { Container } from "@medusajs/ui"
 

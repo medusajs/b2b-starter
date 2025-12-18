@@ -3,7 +3,7 @@ import { APPROVAL_MODULE } from "../../../modules/approval";
 import {
   IApprovalModuleService,
   ModuleUpdateApprovalSettings,
-} from "@b2b-starter/types";
+} from "../../../types";
 
 export const updateApprovalSettingsStep = createStep(
   "update-approval-settings",

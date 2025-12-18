@@ -3,7 +3,7 @@ import { createRemoteLinkStep } from "@medusajs/medusa/core-flows";
 import { createWorkflow, WorkflowResponse } from "@medusajs/workflows-sdk";
 import { APPROVAL_MODULE } from "../../../modules/approval";
 import { COMPANY_MODULE } from "../../../modules/company";
-import { ModuleCompany } from "@b2b-starter/types";
+import { ModuleCompany } from "../../../types";
 import { createApprovalSettingsStep } from "../steps";
 
 export const createApprovalSettingsWorkflow = createWorkflow(

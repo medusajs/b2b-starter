@@ -1,6 +1,6 @@
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 import { B2BCart } from "@/types"
-import { ApprovalStatusType } from "@b2b-starter/types/approval"
+import { ApprovalStatusType } from "@/types/approval"
 import { CheckMini, LockClosedSolid, XMarkMini } from "@medusajs/icons"
 import { Container, Text } from "@medusajs/ui"
 

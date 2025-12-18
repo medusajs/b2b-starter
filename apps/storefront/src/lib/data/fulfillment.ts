@@ -2,7 +2,7 @@
 
 import { sdk } from "@/lib/config"
 import { getAuthHeaders, getCacheOptions } from "@/lib/data/cookies"
-import { StoreFreeShippingPrice } from "@b2b-starter/types/shipping-options/http"
+import { StoreFreeShippingPrice } from "@/types/shipping-option/http"
 import { HttpTypes } from "@medusajs/types"
 
 export const listCartShippingMethods = async (cartId: string) => {

@@ -4,7 +4,7 @@ import {
   IQuoteModuleService,
   ModuleCreateQuote,
   ModuleQuote,
-} from "@b2b-starter/types";
+} from "../../../types";
 
 /*
   A step to create a quote.

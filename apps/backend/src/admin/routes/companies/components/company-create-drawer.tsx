@@ -1,5 +1,5 @@
 import { Button, Drawer } from "@medusajs/ui";
-import { AdminCreateCompany } from "@b2b-starter/types";
+import { AdminCreateCompany } from "../../../../types";
 import { useState } from "react";
 import { useCreateCompany } from "../../../hooks/api";
 import { CompanyForm } from "./company-form";

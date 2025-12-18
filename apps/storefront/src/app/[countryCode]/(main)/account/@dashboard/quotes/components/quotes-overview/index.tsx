@@ -2,7 +2,7 @@
 
 import QuoteCard from "@/modules/account/components/quote-card"
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
-import { StoreQuoteResponse } from "@b2b-starter/types/quote"
+import { StoreQuoteResponse } from "@/types/quote"
 import { Button } from "@medusajs/ui"
 
 const QuotesOverview = ({

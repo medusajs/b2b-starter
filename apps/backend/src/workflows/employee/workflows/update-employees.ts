@@ -4,7 +4,7 @@ import {
   WorkflowData,
   WorkflowResponse,
 } from "@medusajs/workflows-sdk";
-import { ModuleUpdateEmployee, QueryEmployee } from "@b2b-starter/types";
+import { ModuleUpdateEmployee, QueryEmployee } from "../../../types";
 import { removeAdminRoleStep, updateEmployeesStep } from "../steps";
 
 export const updateEmployeesWorkflow = createWorkflow(

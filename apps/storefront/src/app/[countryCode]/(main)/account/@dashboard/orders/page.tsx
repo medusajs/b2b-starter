@@ -4,7 +4,7 @@ import { retrieveCustomer } from "@/lib/data/customer"
 import { listOrders } from "@/lib/data/orders"
 import OrderOverview from "@/modules/account/components/order-overview"
 import PendingCustomerApprovals from "@/modules/account/components/pending-customer-approvals"
-import { ApprovalStatusType } from "@b2b-starter/types/approval"
+import { ApprovalStatusType } from "@/types/approval"
 import { Heading } from "@medusajs/ui"
 import { Metadata } from "next"
 

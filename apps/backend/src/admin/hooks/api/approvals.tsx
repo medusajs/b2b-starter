@@ -5,7 +5,7 @@ import {
   AdminApprovalsResponse,
   AdminUpdateApproval,
   AdminUpdateApprovalSettings,
-} from "@b2b-starter/types";
+} from "../../../types";
 import {
   useMutation,
   UseMutationOptions,

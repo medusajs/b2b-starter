@@ -1,5 +1,5 @@
 import { createWorkflow, WorkflowResponse } from "@medusajs/workflows-sdk";
-import { ModuleUpdateApprovalSettings } from "@b2b-starter/types";
+import { ModuleUpdateApprovalSettings } from "../../../types";
 import { updateApprovalSettingsStep } from "../steps";
 
 export const updateApprovalSettingsWorkflow = createWorkflow(

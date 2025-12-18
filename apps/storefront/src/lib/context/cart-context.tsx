@@ -7,7 +7,7 @@ import {
   updateLineItem,
 } from "@/lib/data/cart"
 import { addToCartEventBus } from "@/lib/data/cart-event-bus"
-import { ApprovalStatusType } from "@b2b-starter/types/approval/module"
+import { ApprovalStatusType } from "@/types/approval"
 import { B2BCart } from "@/types/global"
 import type {
   StoreCart,

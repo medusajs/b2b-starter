@@ -12,7 +12,7 @@ import {
   ApprovalStatusType,
   StoreApprovalResponse,
   StoreApprovalsResponse,
-} from "@b2b-starter/types/approval"
+} from "@/types/approval"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { retrieveCart } from "./cart"

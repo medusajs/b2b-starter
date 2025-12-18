@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { TextCell } from "../../../../components/common/table/table-cells/text-cell";
 import { StatusBadge } from "@medusajs/ui";
-import { ApprovalStatusType } from "@b2b-starter/types/approval";
+import { ApprovalStatusType } from "../../../../../types/approval";
 import ItemsPopover from "../approvals-items-popover";
 import { DateCell } from "../../../../../admin/components/common/table/table-cells/date-cell";
 import { ApprovalActions } from "../approval-actions";

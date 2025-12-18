@@ -6,7 +6,7 @@ import CartMismatchBanner from "@/modules/layout/components/cart-mismatch-banner
 import Footer from "@/modules/layout/templates/footer"
 import { NavigationHeader } from "@/modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@/modules/shipping/components/free-shipping-price-nudge"
-import { StoreFreeShippingPrice } from "@b2b-starter/types/shipping-options/http"
+import { StoreFreeShippingPrice } from "@/types/shipping-option/http"
 import { ArrowUpRightMini, ExclamationCircleSolid } from "@medusajs/icons"
 import { Metadata } from "next"
 

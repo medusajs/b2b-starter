@@ -3,7 +3,7 @@ import { APPROVAL_MODULE } from "../../../modules/approval";
 import {
   IApprovalModuleService,
   ModuleApprovalSettingsFilters,
-} from "@b2b-starter/types";
+} from "../../../types";
 
 type DeleteApprovalSettingsStepInput = {
   ids?: string[];

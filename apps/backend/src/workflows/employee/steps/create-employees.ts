@@ -5,7 +5,7 @@ import {
   ICompanyModuleService,
   ModuleCreateEmployee,
   ModuleEmployee,
-} from "@b2b-starter/types";
+} from "../../../types";
 
 export const createEmployeesStep = createStep(
   "create-employees",

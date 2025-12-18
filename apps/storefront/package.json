@@ -16,7 +16,6 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
-    "@b2b-starter/types": "workspace:*",
     "@headlessui/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",
     "@medusajs/icons": "2.12.3",
@@ -61,11 +60,6 @@
     "prettier": "^2.8.8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3"
-  },
-  "dependenciesMeta": {
-    "@b2b-starter/types": {
-      "injected": true
-    }
   },
   "engines": {
     "node": ">=20"

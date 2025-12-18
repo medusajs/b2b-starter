@@ -1,5 +1,5 @@
 import { MedusaService } from "@medusajs/framework/utils";
-import { ApprovalStatusType } from "@b2b-starter/types";
+import { ApprovalStatusType } from "../../types";
 import { Approval, ApprovalSettings, ApprovalStatus } from "./models";
 
 class ApprovalModuleService extends MedusaService({

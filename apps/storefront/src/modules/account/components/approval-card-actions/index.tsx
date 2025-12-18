@@ -3,7 +3,7 @@
 import { updateApproval } from "@/lib/data/approvals"
 import Button from "@/modules/common/components/button"
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
-import { ApprovalStatusType, ApprovalType } from "@b2b-starter/types/approval"
+import { ApprovalStatusType, ApprovalType } from "@/types/approval"
 import { B2BCart } from "@/types/global"
 import {
   ArrowRightMini,

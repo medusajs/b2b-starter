@@ -1,7 +1,7 @@
 "use client"
 
 import { createQuoteMessage } from "@/lib/data/quotes"
-import { StoreCreateQuoteMessage, StoreQuoteResponse } from "@b2b-starter/types/quote"
+import { StoreCreateQuoteMessage, StoreQuoteResponse } from "@/types/quote"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AdminOrderLineItem, AdminOrderPreview } from "@medusajs/types"
 import { Button, clx, Container, Heading, Select, Textarea } from "@medusajs/ui"

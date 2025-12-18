@@ -24,7 +24,6 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
-    "@b2b-starter/types": "workspace:*",
     "@medusajs/admin-sdk": "2.12.3",
     "@medusajs/cli": "2.12.3",
     "@medusajs/admin-shared": "2.12.3",
@@ -51,11 +50,6 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
     "vite": "^5.2.11"
-  },
-  "dependenciesMeta": {
-    "@b2b-starter/types": {
-      "injected": true
-    }
   },
   "engines": {
     "node": ">=20"

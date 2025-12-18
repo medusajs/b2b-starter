@@ -16,6 +16,7 @@ const nextConfig = {
     },
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "http",
@@ -36,6 +37,14 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "github.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.*.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.amazonaws.com",
       },
     ],
   },

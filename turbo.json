@@ -2,7 +2,6 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [
         "dist/**",
@@ -14,28 +13,22 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true,
-      "dependsOn": ["^build"]
+      "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".eslintrc*", "eslint.config.*"]
     },
     "test": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "jest.config.*"],
       "outputs": ["coverage/**"]
     },
     "test:integration:http": {
-      "dependsOn": ["^build"],
       "cache": false
     },
     "test:integration:modules": {
-      "dependsOn": ["^build"],
       "cache": false
     },
     "test:unit": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "jest.config.*"]
     },
     "clean": {

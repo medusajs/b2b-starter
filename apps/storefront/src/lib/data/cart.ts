@@ -2,7 +2,7 @@
 
 import { sdk } from "@/lib/config"
 import medusaError from "@/lib/util/medusa-error"
-import { StoreApprovalResponse } from "@b2b-starter/types/approval"
+import { StoreApprovalResponse } from "@/types/approval"
 import { HttpTypes } from "@medusajs/types"
 import { track } from "@vercel/analytics/server"
 import { revalidateTag } from "next/cache"

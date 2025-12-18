@@ -2,7 +2,7 @@ import { EllipsisHorizontal, PencilSquare, Trash } from "@medusajs/icons";
 import { DropdownMenu, IconButton, toast } from "@medusajs/ui";
 import { useState } from "react";
 import { EmployeesUpdateDrawer } from ".";
-import { QueryCompany, QueryEmployee } from "@b2b-starter/types";
+import { QueryCompany, QueryEmployee } from "../../../../../types";
 import { DeletePrompt } from "../../../../components/common";
 import { useDeleteEmployee } from "../../../../hooks/api";
 

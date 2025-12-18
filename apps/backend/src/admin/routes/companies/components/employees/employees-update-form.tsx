@@ -12,7 +12,7 @@ import {
   AdminUpdateEmployee,
   QueryCompany,
   QueryEmployee,
-} from "@b2b-starter/types";
+} from "../../../../../types";
 import { CoolSwitch } from "../../../../components/common";
 import { currencySymbolMap } from "../../../../utils";
 

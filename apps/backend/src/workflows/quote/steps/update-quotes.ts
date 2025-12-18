@@ -4,7 +4,7 @@ import {
 } from "@medusajs/framework/utils";
 import { StepResponse, createStep } from "@medusajs/framework/workflows-sdk";
 import { QUOTE_MODULE } from "../../../modules/quote";
-import { IQuoteModuleService, ModuleUpdateQuote } from "@b2b-starter/types";
+import { IQuoteModuleService, ModuleUpdateQuote } from "../../../types";
 
 /*
   A step to update a quote.

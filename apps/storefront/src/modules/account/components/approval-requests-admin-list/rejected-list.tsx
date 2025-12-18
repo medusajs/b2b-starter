@@ -1,7 +1,7 @@
 import { listApprovals } from "@/lib/data/approvals"
 import ApprovalCard from "@/modules/account/components/approval-card"
 import ResourcePagination from "@/modules/account/components/resource-pagination"
-import { ApprovalStatusType } from "@b2b-starter/types/approval"
+import { ApprovalStatusType } from "@/types/approval"
 import { Text } from "@medusajs/ui"
 
 export default async function RejectedApprovalRequestsAdminList({

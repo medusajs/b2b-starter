@@ -1,5 +1,5 @@
 import { createWorkflow, WorkflowResponse } from "@medusajs/workflows-sdk";
-import { ModuleCreateQuoteMessage, ModuleQuoteMessage } from "@b2b-starter/types";
+import { ModuleCreateQuoteMessage, ModuleQuoteMessage } from "../../../types";
 import { createQuoteMessageStep } from "../steps/create-quote-message";
 
 /*

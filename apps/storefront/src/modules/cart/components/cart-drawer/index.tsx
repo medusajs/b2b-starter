@@ -12,7 +12,7 @@ import LocalizedClientLink from "@/modules/common/components/localized-client-li
 import ShoppingBag from "@/modules/common/icons/shopping-bag"
 import FreeShippingPriceNudge from "@/modules/shipping/components/free-shipping-price-nudge"
 import { B2BCustomer } from "@/types"
-import { StoreFreeShippingPrice } from "@b2b-starter/types/shipping-options/http"
+import { StoreFreeShippingPrice } from "@/types/shipping-option/http"
 import { ExclamationCircle, LockClosedSolidMini } from "@medusajs/icons"
 import { Drawer, Text } from "@medusajs/ui"
 import { usePathname } from "next/navigation"

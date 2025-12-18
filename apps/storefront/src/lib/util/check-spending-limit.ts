@@ -1,12 +1,12 @@
 import {
-  ModuleCompanySpendingLimitResetFrequency,
-  QueryCompany,
   B2BCart,
   B2BCustomer,
+  ModuleCompanySpendingLimitResetFrequency,
 } from "@/types"
 import { HttpTypes } from "@medusajs/types"
 
-export function getSpendWindow(company: QueryCompany): {
+// TODO: Fix type as part of moving all types to a dedicated workspace package
+export function getSpendWindow(company: any): {
   start: Date
   end: Date
 } {

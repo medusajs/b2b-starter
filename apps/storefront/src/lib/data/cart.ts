@@ -3,11 +3,11 @@
 import { sdk } from "@/lib/config"
 import medusaError from "@/lib/util/medusa-error"
 import { StoreApprovalResponse } from "@/types/approval"
+import { B2BCart } from "@/types/global"
 import { HttpTypes } from "@medusajs/types"
 import { track } from "@vercel/analytics/server"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
-import { B2BCart } from "@/types/global"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -44,7 +44,6 @@ export async function retrieveCart(id?: string) {
       },
       headers,
       next,
-      cache: "force-cache",
     })
     .then(({ cart }) => {
       return cart as B2BCart

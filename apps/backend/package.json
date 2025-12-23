@@ -24,19 +24,19 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
-    "@medusajs/admin-sdk": "2.12.3",
-    "@medusajs/cli": "2.12.3",
-    "@medusajs/admin-shared": "2.12.3",
-    "@medusajs/dashboard": "2.12.3",
-    "@medusajs/framework": "2.12.3",
-    "@medusajs/js-sdk": "2.12.3",
-    "@medusajs/medusa": "2.12.3",
+    "@medusajs/admin-sdk": "2.12.4-snapshot-20251218153040",
+    "@medusajs/cli": "2.12.4-snapshot-20251218153040",
+    "@medusajs/admin-shared": "2.12.4-snapshot-20251218153040",
+    "@medusajs/dashboard": "2.12.4-snapshot-20251218153040",
+    "@medusajs/framework": "2.12.4-snapshot-20251218153040",
+    "@medusajs/js-sdk": "2.12.4-snapshot-20251218153040",
+    "@medusajs/medusa": "2.12.4-snapshot-20251218153040",
     "@medusajs/ui": "4.0.31",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@medusajs/test-utils": "2.12.3",
-    "@medusajs/ui-preset": "2.12.3",
+    "@medusajs/test-utils": "2.12.4-snapshot-20251218153040",
+    "@medusajs/ui-preset": "2.12.4-snapshot-20251218153040",
     "@swc/core": "^1.5.7",
     "@swc/jest": "^0.2.36",
     "@types/jest": "^29.5.14",

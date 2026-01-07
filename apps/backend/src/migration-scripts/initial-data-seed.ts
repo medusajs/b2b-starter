@@ -237,7 +237,7 @@ export default async function initial_data_seed({
         rules: [
           {
             attribute: "enabled_in_store",
-            value: '"true"',
+            value: "true",
             operator: "eq",
           },
           {
@@ -275,7 +275,7 @@ export default async function initial_data_seed({
         rules: [
           {
             attribute: "enabled_in_store",
-            value: '"true"',
+            value: "true",
             operator: "eq",
           },
           {

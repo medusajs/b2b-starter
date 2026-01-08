@@ -9,7 +9,7 @@ import { StoreGetFreeShippingPricesParamsType } from "../validators";
 export const GET = async (
   req: MedusaRequest<{}, StoreGetFreeShippingPricesParamsType>,
   res: MedusaResponse<{
-    prices: StoreFreeShippingPrice;
+    prices: StoreFreeShippingPrice[];
   }>
 ) => {
   const { cart_id } = req.filterableFields;

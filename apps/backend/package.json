@@ -15,7 +15,6 @@
   ],
   "scripts": {
     "build": "medusa build",
-    "seed": "medusa exec ./src/scripts/seed.ts",
     "start": "medusa start",
     "dev": "medusa develop",
     "clean": "rm -rf .medusa/server .medusa/admin node_modules",
@@ -24,19 +23,22 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
-    "@medusajs/admin-sdk": "2.13.2",
-    "@medusajs/cli": "2.13.2",
-    "@medusajs/admin-shared": "2.13.2",
-    "@medusajs/dashboard": "2.13.2",
-    "@medusajs/framework": "2.13.2",
-    "@medusajs/js-sdk": "2.13.2",
-    "@medusajs/medusa": "2.13.2",
-    "@medusajs/ui": "4.0.31",
-    "zod": "3.25.76"
+    "@medusajs/admin-sdk": "2.13.6",
+    "@medusajs/cli": "2.13.6",
+    "@medusajs/admin-shared": "2.13.6",
+    "@medusajs/dashboard": "2.13.6",
+    "@medusajs/framework": "2.13.6",
+    "@medusajs/js-sdk": "2.13.6",
+    "@medusajs/medusa": "2.13.6",
+    "@medusajs/ui": "4.1.6",
+    "zod": "3.25.76",
+    "@tanstack/react-query": "5.64.2",
+    "react-router-dom": "6.30.3",
+    "react-i18next": "13.5.0"
   },
   "devDependencies": {
-    "@medusajs/test-utils": "2.13.2",
-    "@medusajs/ui-preset": "2.13.2",
+    "@medusajs/test-utils": "2.13.6",
+    "@medusajs/ui-preset": "2.13.6",
     "@swc/core": "^1.5.7",
     "@swc/jest": "^0.2.36",
     "@types/jest": "^29.5.14",

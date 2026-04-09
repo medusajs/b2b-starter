@@ -10,7 +10,7 @@ export enum SpendingLimitResetFrequency {
   yearly = "yearly",
 }
 
-export interface B2BCart extends HttpTypes.StoreCart {
+export interface B2BCart extends Omit<HttpTypes.StoreCart, "promotions"> {
   completed_at?: string
   company: QueryCompany
   promotions?: HttpTypes.StorePromotion[]

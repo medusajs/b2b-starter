@@ -8,6 +8,7 @@ import { NavigationHeader } from "@/modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@/modules/shipping/components/free-shipping-price-nudge"
 import { StoreFreeShippingPrice } from "@/types/shipping-option/http"
 import { ArrowUpRightMini, ExclamationCircleSolid } from "@medusajs/icons"
+import { StoreCart } from "@medusajs/types"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -35,10 +36,10 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
           <a
             className="group hover:text-ui-fg-interactive-hover text-ui-fg-interactive self-end small:self-auto"
-            href="https://git.new/b2b-starter-repo"
+            href="https://cloud.medusajs.com"
             target="_blank"
           >
-            GitHub Repo
+            Deploy to Medusa Cloud
             <ArrowUpRightMini className="group-hover:text-ui-fg-interactive-hover inline text-ui-fg-interactive" />
           </a>
         </div>
@@ -55,7 +56,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
       {cart && freeShippingPrices && (
         <FreeShippingPriceNudge
           variant="popup"
-          cart={cart}
+          cart={cart as StoreCart}
           freeShippingPrices={freeShippingPrices}
         />
       )}

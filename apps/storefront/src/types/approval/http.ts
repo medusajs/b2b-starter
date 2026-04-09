@@ -1,3 +1,4 @@
+import { B2BCart } from "../global";
 import { ApprovalStatusType, ApprovalType } from "./module";
 import { QueryApproval, QueryApprovalStatus } from "./query";
 
@@ -7,7 +8,7 @@ export type StoreApprovalResponse = {
 };
 
 export type StoreApprovalsResponse = {
-  approvals: QueryApproval[];
+  carts_with_approvals: B2BCart[];
   count: number;
 };
 

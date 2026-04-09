@@ -14,6 +14,7 @@ import FreeShippingPriceNudge from "@/modules/shipping/components/free-shipping-
 import { B2BCustomer } from "@/types"
 import { StoreFreeShippingPrice } from "@/types/shipping-option/http"
 import { ExclamationCircle, LockClosedSolidMini } from "@medusajs/icons"
+import { StoreCart } from "@medusajs/types"
 import { Drawer, Text } from "@medusajs/ui"
 import { usePathname } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -171,7 +172,7 @@ const CartDrawer = ({
                   {cart && freeShippingPrices && (
                     <FreeShippingPriceNudge
                       variant="inline"
-                      cart={cart}
+                      cart={cart as StoreCart}
                       freeShippingPrices={freeShippingPrices}
                     />
                   )}

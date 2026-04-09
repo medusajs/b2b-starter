@@ -10,8 +10,8 @@ type ItemTotalPriceProps = {
 }
 
 const ItemTotalPrice = ({ item, currencyCode }: ItemTotalPriceProps) => {
-  const originalPrice = item.original_total
-  const currentPrice = item.total
+  const originalPrice = item.original_total || item.total || 0
+  const currentPrice = item.total || 0
   const hasReducedPrice = currentPrice < originalPrice
 
   return (
@@ -29,7 +29,7 @@ const ItemTotalPrice = ({ item, currencyCode }: ItemTotalPriceProps) => {
             </p>
 
             <span className="text-ui-fg-interactive">
-              -{getPercentageDiff(originalPrice, currentPrice || 0)}%
+              -{getPercentageDiff(originalPrice, currentPrice)}%
             </span>
           </div>
         )}

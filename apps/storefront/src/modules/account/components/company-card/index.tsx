@@ -184,7 +184,7 @@ const CompanyCard = ({
             </Text>
             <Select
               name="spending_limit_reset_frequency"
-              value={companyData.spending_limit_reset_frequency}
+              value={companyData.spending_limit_reset_frequency || ""}
               onChange={(e) =>
                 setCompanyData({
                   ...companyData,

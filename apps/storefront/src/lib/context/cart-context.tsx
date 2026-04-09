@@ -107,9 +107,9 @@ export function CartProvider({
               newItems[existingItemIndex] = {
                 ...item,
                 quantity: item.quantity + lineItem.quantity,
-                total: item.total + lineItem.quantity * item.unit_price,
+                total: (item.total || 0) + lineItem.quantity * item.unit_price,
                 original_total:
-                  item.total + lineItem.quantity * item.unit_price,
+                  (item.original_total || 0) + lineItem.quantity * item.unit_price,
               }
 
               continue
@@ -119,7 +119,7 @@ export function CartProvider({
               lineItem.productVariant.calculated_price?.calculated_amount || 0
 
             const newItem: StoreCartLineItem = {
-              cart: prev || ({} as StoreCart),
+              cart: (prev || {}) as StoreCart,
               cart_id: prev?.id || "",
               discount_tax_total: 0,
               discount_total: 0,

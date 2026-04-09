@@ -26,6 +26,7 @@ coverage
 
 # Misc
 *.pem
+.vscode
 
 # Debug
 npm-debug.log*

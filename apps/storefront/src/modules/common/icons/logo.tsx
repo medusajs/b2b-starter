@@ -1,6 +1,6 @@
-import { SVGProps } from "react"
+import { IconProps } from "@/types/icon"
 
-const LogoIcon = (props: SVGProps<SVGSVGElement>) => (
+const LogoIcon: React.FC<IconProps> = (props) => (
   <svg
     width="20"
     height="20"

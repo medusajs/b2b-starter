@@ -30,6 +30,20 @@ The per-(vendor, variant) join. Holds vendor-side identifiers (`vendor_sku`, `ve
 
 Medusa's `Pricing` module handles SELL prices (per-customer-group, per-currency, per-region). VendorItem holds vendor COST prices — orthogonal concern.
 
+### PurchaseOrder (custom)
+
+The agreement to buy specific items from a Vendor. Lives across all three phases (Place / Receive / Pay) until paid or written off. Identified by a human-readable PO number (`LIM-YYYY-NNNN`) and an internal UUID. Three FSM enum columns track state per phase (`place_status`, `receive_status`, `pay_status`). Snapshot fields (`payment_terms_snapshot`, `currency`, ship-to / bill-to addresses) capture state at PO creation time so a PO sent yesterday renders correctly even if the vendor's data changes today.
+
+_Avoid_: order (ambiguous — sales order vs PO; prefer "PO"), purchase, transaction.
+
+### POLineItem (custom; inside `purchaseOrder` module)
+
+A single ordered line on a PO. References a Medusa **`ProductVariant`** via link (`variant_id`, nullable for free-text lines drafted by the agent for unfamiliar products). Carries snapshots of SKU values at line creation so the line stays accurate if the variant or vendor SKU changes later. `placeholder_flags` tracks which fields are unresolved (`[NEEDS PRICE]`, `[NEW ITEM]`, `[STALE]`) — sending is gated until all are cleared.
+
+### POSnapshot (custom; inside `purchaseOrder` module)
+
+A frozen, full copy of a PO + line items at a terminal-ish moment (PO sent, payment initiated). Carries a `rendered_email_file_id` pointing to the actual PDF/email the vendor saw. Audit-grade; rare.
+
 ### Vendor
 
 A supplier of goods to LIM. Has payment terms, a primary order contact, and an accounting contact. Vendors carry their own status, rating, ordering rhythm, freight defaults, and an `agent_authority` setting that bounds what stealth is allowed to commit on their behalf.

@@ -45,50 +45,69 @@ The following are **explicitly out of scope** for this slice and will be address
 ### 3.1 Layered model
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Inbound email / Slack / human action                        │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────┐
-│ procurement-agent (apps/procurement-agent/)                 │
-│   Temporal worker process                                   │
-│                                                             │
-│   Parent workflow per PO (long-running, durable, weeks)     │
-│   ├── Place child workflow (this slice)                     │
-│   ├── Receive child workflow  (Slice 2)                     │
-│   └── Pay child workflow      (Slice 3)                     │
-│                                                             │
-│   Activities = AI capabilities:                             │
-│     • place-drafting                                        │
-│     • vendor-match                                          │
-│     • inbound-classifier                                    │
-│     • outbound-classifier                                   │
-│     • slack-intent                                          │
-│   Each = LLM call (AI Gateway) + structured output +        │
-│   read-only tools (query Medusa data) → deterministic       │
-│   write phase invokes Medusa workflows                      │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Medusa admin SDK
-                               │ (HTTP or in-process)
-┌──────────────────────────────▼──────────────────────────────┐
-│ Medusa backend (apps/backend/)                              │
-│                                                             │
-│   Workflows (transactional, atomic, with compensation):     │
-│     createPODraftWorkflow, markPOSentWorkflow, etc.         │
-│                                                             │
-│   Modules (data + isolation):                               │
-│     vendor, item, purchaseOrder, procurementEvent,          │
-│     inboxMail, procurementFile                              │
-│                                                             │
-│   Index Module configured upfront for cross-module filters  │
-└─────────────────────────────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────┐
-│ Medusa admin UI (apps/backend/src/admin/)                   │
-│                                                             │
-│   Vendor list/detail, Purchase Order list/detail with       │
-│   event timeline + file attachments, Inbox view             │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ External channels: email / SMS / WhatsApp / Slack / voice /      │
+│                    manual entry / photo upload                   │
+└────────────────────┬─────────────────────────────────────────────┘
+                     │ webhooks / IMAP polls / form posts
+┌────────────────────▼─────────────────────────────────────────────┐
+│ messaging service (apps/messaging/)                              │
+│   Node + Fastify + Drizzle. Own data layer.                      │
+│                                                                  │
+│   Channel adapters (own auth, retry, rate-limit):                │
+│     email (IMAP/SMTP/Gmail API), sms (Twilio), whatsapp          │
+│     (Meta Cloud API), slack (Events API), voice, manual          │
+│                                                                  │
+│   Data: ChannelAccount, MessageThread, InboundMessage,           │
+│         OutboundMessage. Opaque vendor_id / po_id text refs.     │
+│                                                                  │
+│   API: POST /inbound, /outbound, /outbound/:id/send, etc.        │
+│   Events: publishes `message.received` / `message.sent` to       │
+│           shared Redis stream                                    │
+└────────────────────┬─────────────────────────────────────────────┘
+                     │ subscribes to message events; calls API
+┌────────────────────▼─────────────────────────────────────────────┐
+│ procurement-agent (apps/procurement-agent/)                      │
+│   Temporal worker process                                        │
+│                                                                  │
+│   Parent workflow per PO (long-running, durable, weeks)          │
+│   ├── Place child workflow (this slice)                          │
+│   ├── Receive child workflow  (Slice 2)                          │
+│   └── Pay child workflow      (Slice 3)                          │
+│                                                                  │
+│   Activities = AI capabilities (LLM via AI Gateway):             │
+│     place-drafting, vendor-match, inbound-classifier,            │
+│     outbound-classifier, slack-intent                            │
+│                                                                  │
+│   Each activity's write phase calls EITHER messaging service     │
+│   (for message ops: classify, mark-sent) OR Medusa workflows     │
+│   (for PO ops: createPODraft, markPOSent).                       │
+└──────────┬───────────────────────────────────────┬───────────────┘
+           │ Medusa admin SDK                      │ messaging API
+           ▼                                       ▼
+┌─────────────────────────────────┐  ┌─────────────────────────────┐
+│ Medusa backend (apps/backend/)  │  │ messaging service           │
+│                                 │  │ (same service as top)       │
+│ Workflows: createPODraft,       │  │                             │
+│   markPOSent, attachFileToPO,   │  │                             │
+│   linkMessageToPO, ...          │  │                             │
+│                                 │  │                             │
+│ Modules: vendor, item,          │  │                             │
+│   purchaseOrder,                │  │                             │
+│   procurementEvent,             │  │                             │
+│   procurementFile               │  │                             │
+│                                 │  │                             │
+│ Index Module for cross-module   │  │                             │
+│ filtering                       │  │                             │
+└──────────┬──────────────────────┘  └─────────────────────────────┘
+           │                                       ▲
+           ▼                                       │ widget calls
+┌──────────────────────────────────────────────────┴──────────────┐
+│ Medusa admin UI (apps/backend/src/admin/)                       │
+│                                                                 │
+│   Vendor list/detail, PO list/detail with event timeline +      │
+│   files, Inbox widget that fetches from messaging service       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 3.2 Why this split
@@ -97,6 +116,7 @@ The following are **explicitly out of scope** for this slice and will be address
 - **Temporal activities are the right wrapper for AI capabilities** — retryable, replayable, individually traceable in Langfuse. This is the pattern stealth already validated.
 - **Medusa workflows are the right wrapper for transactional commits** — atomic, type-safe, compensation-backed, isolated per module. One activity can call multiple Medusa workflows; each workflow stays small and focused.
 - **Modules give isolation and admin UI for free.** Medusa's admin auto-generates list/detail pages from module schema; we extend with custom widgets where stealth's domain (event timeline, placeholder warnings, tone references) needs richer UI.
+- **Messaging is a separate service, not a Medusa module.** Messaging is generic communications infrastructure — it isn't commerce-specific. Channel adapters (IMAP, Twilio, WhatsApp, Slack Events) want their own service surface with their own auth/webhook/retry semantics. Hosting them as Medusa subscribers would be awkward. Future consumers (customer support, internal ops) reuse the same service. See §16 for full design.
 
 ### 3.3 ADR carry-over from stealth
 
@@ -124,28 +144,41 @@ b2b-starter/ (turborepo root, current name kept for now)
 │   ├── backend/                  # Medusa.js v2 — existing, extended
 │   │   ├── src/
 │   │   │   ├── modules/
-│   │   │   │   ├── company/      # existing B2B starter
-│   │   │   │   ├── quote/        # existing
-│   │   │   │   ├── approval/     # existing
+│   │   │   │   ├── company/, quote/, approval/  # existing B2B starter
 │   │   │   │   ├── vendor/                # NEW
 │   │   │   │   ├── item/                  # NEW
 │   │   │   │   ├── purchaseOrder/         # NEW
 │   │   │   │   ├── procurementEvent/      # NEW
-│   │   │   │   ├── inboxMail/             # NEW
 │   │   │   │   └── procurementFile/       # NEW
 │   │   │   ├── workflows/
 │   │   │   │   ├── company/, quote/, approval/  # existing
-│   │   │   │   ├── vendor/                # NEW
-│   │   │   │   ├── item/                  # NEW
-│   │   │   │   ├── purchaseOrder/         # NEW
+│   │   │   │   ├── vendor/, item/, purchaseOrder/    # NEW
 │   │   │   │   ├── procurementEvent/      # NEW
-│   │   │   │   └── inboxMail/             # NEW
+│   │   │   │   └── messageRef/            # NEW — workflows that record opaque message-id refs from the messaging service
 │   │   │   ├── links/                     # NEW links for procurement modules
-│   │   │   ├── admin/                     # NEW Vendor/PO/Inbox pages
+│   │   │   ├── admin/                     # NEW Vendor/PO pages + Inbox widget that calls messaging API
 │   │   │   └── api/
 │   │   │       └── admin/                 # NEW routes consumed by the agent
 │   │   └── medusa-config.ts               # extended: register procurement modules + Index Module
 │   ├── storefront/                        # untouched in this slice
+│   ├── messaging/                         # NEW — see §16 for full design
+│   │   ├── src/
+│   │   │   ├── api/                       # Fastify (or Hono) HTTP routes
+│   │   │   ├── db/                        # Drizzle schema + client
+│   │   │   ├── adapters/                  # channel-specific ingestion + send
+│   │   │   │   ├── _shared/
+│   │   │   │   ├── email/                 # IMAP/SMTP/Gmail
+│   │   │   │   ├── sms/                   # Twilio
+│   │   │   │   ├── whatsapp/              # Meta Cloud API
+│   │   │   │   ├── slack/                 # Events API
+│   │   │   │   ├── voice/                 # transcript ingestion
+│   │   │   │   └── manual/                # form-based entry
+│   │   │   ├── ingestion/                 # webhook routes + IMAP poller
+│   │   │   ├── events/                    # publisher (Redis stream)
+│   │   │   └── server.ts
+│   │   ├── drizzle/                       # migrations
+│   │   ├── package.json
+│   │   └── tsconfig.json
 │   └── procurement-agent/                 # NEW
 │       ├── src/
 │       │   ├── workflows/                 # Temporal parent + Place child
@@ -157,7 +190,11 @@ b2b-starter/ (turborepo root, current name kept for now)
 │       │   │   ├── inbound-classifier/
 │       │   │   ├── outbound-classifier/
 │       │   │   └── slack-intent/
-│       │   ├── medusa-sdk.ts              # SDK setup for calling Medusa workflows
+│       │   ├── clients/
+│       │   │   ├── medusa-sdk.ts          # Medusa admin SDK
+│       │   │   └── messaging-client.ts    # typed client for messaging service
+│       │   ├── subscribers/
+│       │   │   └── message-received.ts    # consumes Redis stream from messaging
 │       │   ├── worker.ts                  # Temporal worker entrypoint
 │       │   └── lib/                       # AI Gateway, Langfuse, prompt utilities
 │       ├── package.json
@@ -165,14 +202,15 @@ b2b-starter/ (turborepo root, current name kept for now)
 ├── packages/
 │   ├── shared-types/                      # NEW — cross-app TS types
 │   │   ├── procurement.ts                 # Vendor, Item, PO, Event types
+│   │   ├── messaging.ts                   # Message, Thread, ChannelAccount types
 │   │   └── package.json
 │   └── (existing packages, if any)
 ├── docs/
-│   ├── adr/                               # NEW — 9 ADRs from stealth + ADR 0010
+│   ├── adr/                               # NEW — 9 ADRs from stealth + ADR 0010 + ADR 0011
 │   ├── agents/                            # existing
 │   └── superpowers/specs/                 # this spec lives here
-├── turbo.json                             # extended: procurement-agent in pipeline
-├── pnpm-workspace.yaml                    # extended: procurement-agent + shared-types
+├── turbo.json                             # extended: messaging + procurement-agent in pipeline
+├── pnpm-workspace.yaml                    # extended: messaging + procurement-agent + shared-types
 └── (rest of existing root)
 ```
 
@@ -184,7 +222,7 @@ Each module follows the standard Medusa pattern: `src/modules/<name>/{models/, s
 
 **Entities:**
 
-- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, tone_reference_message_id (nullable; `model.text()` referencing `messaging.InboundMessage` — the link in §5.7 carries the relationship).
+- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, tone_reference_message_id (`model.text()`, nullable — opaque reference to a message in the messaging service; Medusa does not link it because the messaging service owns the data).
 - `VendorContact` — id, vendor_id (FK), name, role, email, phone.
 - `OrderingInstruction` — id, vendor_id (FK), instruction_text, cutoff_time (nullable), order_days (text[], nullable).
 
@@ -217,18 +255,11 @@ Each module follows the standard Medusa pattern: `src/modules/<name>/{models/, s
 
 Service-level invariant: events are append-only. No update workflow exists for `Event`.
 
-### 5.5 `messaging`
+### 5.5 Messaging (deferred to a peer service)
 
-The module models inbound and outbound communications across **any channel**, not just email. Channel-specific quirks live in a `channel_payload: jsonb` field; the rest of the schema is normalized so the agent can treat all messages uniformly. See §15.1 for the underlying design principle.
+Messaging — inbound and outbound communications across email / SMS / WhatsApp / Slack / voice / manual / photo — **does not live inside Medusa.** It runs as a separate Node service at `apps/messaging/` with its own Drizzle schema, channel adapters, and HTTP API. Medusa procurement entities reference messages by opaque text IDs (`vendor.tone_reference_message_id`, `procurementEvent.payload.message_id`, links via the `messageRef` workflows in §6.1).
 
-**Entities:**
-
-- `ChannelAccount` — id, channel (enum: `email` / `sms` / `whatsapp` / `slack` / `voice` / `manual` / `photo`), address (the identity at that channel — `yemi@lagosinternationalmarket.com`, `+1-555-0100`, `#procurement` Slack channel, etc.), display_name, channel_config (jsonb — channel-specific config: outbound capture method for email, Twilio account SID for SMS, WhatsApp Business phone-number ID, etc.), is_active.
-- `MessageThread` — id, channel (enum, same as ChannelAccount.channel), external_thread_id (the channel's native thread/conversation identifier — email References header chain, SMS phone-number-pair, WhatsApp conversation ID, Slack thread_ts), vendor_id (`model.text()` — link in §5.7; nullable until matched), first_message_at, last_message_at, message_count.
-- `InboundMessage` — id, channel_account_id (FK same module), thread_id (FK same module, nullable until thread is resolved), external_message_id (channel's native ID; unique per channel), from_identity (text — email address, phone number, Slack user ID, etc.), to_identities (text[]), subject (nullable — email has it; SMS/WhatsApp don't), body_plain, body_html (nullable), received_at, channel_payload (jsonb — raw email headers, Twilio webhook body, WhatsApp Cloud API payload, voice transcript with confidence scores, etc.), classification (text, nullable — set by inbound-classifier), classified_at (nullable), vendor_id (`model.text()` — link in §5.7; nullable until matched).
-- `OutboundMessage` — id, channel_account_id (FK same module), thread_id (FK same module, nullable for new conversations), external_message_id (nullable until sent), in_reply_to_external_id (nullable), to_identities (text[]), cc_identities (text[], nullable), subject (nullable), body_plain, body_html (nullable), sent_at (nullable; null = draft), drafted_by_capability (text, nullable), gate_status (enum: `draft` / `approved` / `sent` / `cancelled`), purchase_order_id (`model.text()` — link in §5.7; nullable), channel_payload (jsonb — channel-specific send metadata).
-
-The agent operates on `InboundMessage` and `OutboundMessage` uniformly across channels. Adding a new channel (e.g., Telegram) is: add the enum value, write a channel-specific adapter for the worker that ingests/sends, define the `channel_payload` shape in the adapter — **no schema migration**.
+See **§16 — Messaging service** for the full design (entities, adapters, API, event publishing, Medusa admin integration).
 
 ### 5.6 `procurementFile`
 
@@ -249,11 +280,7 @@ Every link is its own file in `apps/backend/src/links/`. All links include `filt
 | `item-vendor-item.ts` | `item` ↔ `item.VendorItem` | Same-module relation; expressed as a normal Mikro relationship via `item_id`, not via `defineLink`. Listed here for completeness — not a separate link file. |
 | `purchase-order-event.ts` | `purchaseOrder` ↔ `procurementEvent` | One-to-many; `filterable: ["id", "event_type", "phase"]` on event side for timeline queries. |
 | `purchase-order-file.ts` | `purchaseOrder` ↔ `procurementFile` | One-to-many; `filterable: ["id", "file_type"]`. |
-| `inbound-message-vendor.ts` | `messaging.InboundMessage` ↔ `vendor` | Set by vendor-match; nullable. `filterable: ["id", "name"]` on vendor. |
-| `message-thread-vendor.ts` | `messaging.MessageThread` ↔ `vendor` | Threads identified with a vendor. `filterable: ["id", "name"]`. |
-| `outbound-message-purchase-order.ts` | `messaging.OutboundMessage` ↔ `purchaseOrder` | Outbound PO communications (across channels) linked to their PO. |
-| `inbound-message-file.ts` | `messaging.InboundMessage` ↔ `procurementFile` | Attachments — emails carry PDFs, WhatsApp carries photos, etc. |
-| `vendor-tone-reference-message.ts` | `vendor` ↔ `messaging.InboundMessage` | The pinned tone-reference message per vendor (ADR 0009). Single inbound message per vendor; not isList. |
+| *(no messaging links)* | — | Messages live in the messaging service (§16). Medusa stores opaque message IDs on `vendor.tone_reference_message_id`, `outboundMessageRef.purchase_order_id`, and `procurementEvent.payload.message_id`. Cross-system joins happen in the agent or in admin widgets that call both APIs. |
 | `item-line-item.ts` | `item` ↔ `purchaseOrder.POLineItem` | Lines that match a canonical item. Free-text lines have no link. |
 
 Index Module setup is a one-time foundation step at the start of implementation:
@@ -276,12 +303,9 @@ All workflows live in `apps/backend/src/workflows/`. Each is composed of steps f
 | `setVendorToneReferenceWorkflow` | Pin a specific `IncomingEmail` as the tone reference | Clear or restore previous tone_reference_email_id |
 | `createItemWorkflow` | Create canonical Item | Delete item |
 | `createVendorItemWorkflow` | Create or update VendorItem (upsert by `vendor_id + vendor_sku`) | Restore previous VendorItem state |
-| `createChannelAccountWorkflow` | Register a new `ChannelAccount` for a channel | Soft-delete |
-| `recordInboundMessageWorkflow` | Persist an inbound message (any channel) + resolve or create its thread + emit `message.received` event for the agent | Soft-delete the message and unattached thread |
-| `recordOutboundMessageWorkflow` | Persist an outbound message draft (any channel) | Soft-delete |
-| `markOutboundSentWorkflow` | Mark an outbound message sent and stamp `external_message_id` once the channel adapter confirms delivery | Revert to `approved` state |
-| `classifyInboundMessageWorkflow` | Persist classification result from inbound-classifier | Clear classification fields |
-| `linkInboundMessageToVendorWorkflow` | Set the vendor on an InboundMessage (and its Thread) from vendor-match output | Clear the vendor link |
+| `linkInboundMessageToPOWorkflow` | Record that an inbound message (by opaque ID, owned by messaging service) is associated with a PO. Emits `inbound_message_linked` event. | Remove the reference; emit reversal event |
+| `linkOutboundMessageToPOWorkflow` | Record that an outbound message draft is associated with a PO. | Remove the reference |
+| `setVendorToneReferenceWorkflow` | Set `vendor.tone_reference_message_id` to an opaque message ID. The workflow does NOT validate the message exists in messaging service (avoiding cross-service tight-coupling); the admin UI does that validation before invoking. | Restore previous value |
 | `attachFileToPOWorkflow` | Dedup by SHA256, attach to PO, emit `file_attached` event | Detach link; do not delete file (other POs may reference) |
 | `createPODraftWorkflow` | Atomically: create PO header + line items + initial `po_drafted` event | Cascade delete PO + lines + events for this PO |
 | `editPODraftWorkflow` | Edit line items / header on a Draft PO (state=`draft` only) | Restore previous header + lines from snapshot input |
@@ -317,14 +341,10 @@ New routes under `apps/backend/src/api/admin/`. These are the surface the procur
 | `/admin/vendors/:id` | GET / POST / DELETE | retrieve / `updateVendorWorkflow` / `softDeleteVendorWorkflow` |
 | `/admin/items` | GET / POST | list / `createItemWorkflow` |
 | `/admin/vendor-items` | GET / POST | list / `createVendorItemWorkflow` |
-| `/admin/messaging/channel-accounts` | GET / POST | list / `createChannelAccountWorkflow` |
-| `/admin/messaging/inbound` | GET / POST | list (filterable by `channel`, `vendor_id`, `classification`) / `recordInboundMessageWorkflow` |
-| `/admin/messaging/inbound/:id/classify` | POST | `classifyInboundMessageWorkflow` |
-| `/admin/messaging/inbound/:id/link-vendor` | POST | `linkInboundMessageToVendorWorkflow` |
-| `/admin/messaging/outbound` | GET / POST | list / `recordOutboundMessageWorkflow` |
-| `/admin/messaging/outbound/:id/mark-sent` | POST | `markOutboundSentWorkflow` |
-| `/admin/messaging/threads` | GET | list (filterable by `channel`, `vendor_id`) |
-| `/admin/messaging/threads/:id` | GET | retrieve thread with messages timeline |
+| `/admin/purchase-orders/:id/link-inbound-message` | POST | `linkInboundMessageToPOWorkflow` (body: `{ message_id: string }`) |
+| `/admin/purchase-orders/:id/link-outbound-message` | POST | `linkOutboundMessageToPOWorkflow` (body: `{ message_id: string }`) |
+| `/admin/vendors/:id/tone-reference` | POST | `setVendorToneReferenceWorkflow` (body: `{ message_id: string }`) |
+| *(messaging routes — `/inbound`, `/outbound`, `/threads`, `/channel-accounts` — live on the messaging service at its own host, not on Medusa. See §16.4.)* | — | — |
 | `/admin/files` | POST | upload + register (compute SHA256 in route, then call workflow) |
 | `/admin/purchase-orders` | GET / POST | list / `createPODraftWorkflow` |
 | `/admin/purchase-orders/:id` | GET / POST | retrieve (with events + files via `query.graph`) / `editPODraftWorkflow` |
@@ -352,24 +372,40 @@ Imported with minimal changes:
 
 Imported with rewrites:
 
-- The deterministic-write phase of each activity. Where stealth wrote directly via Drizzle:
+- The deterministic-write phase of each activity dispatches to **two clients** depending on what's being written. Where stealth wrote directly via Drizzle into one DB:
 
   ```ts
   // before (stealth)
   await db.insert(purchaseOrder).values({...})
+  await db.insert(emailRecord).values({...})
   ```
 
   becomes:
 
   ```ts
   // after (procurement-agent)
+  // procurement-domain writes → Medusa
   await medusaSdk.admin.workflows.createPODraft.run({
     input: {...},
     idempotency_key: ctx.activityId,
   })
+
+  // messaging-domain writes → messaging service
+  await messagingClient.outbound.create({
+    channel: 'email',
+    body_plain: '...',
+    purchase_order_id: po.id,    // opaque ref back to Medusa
+    drafted_by_capability: 'place-drafting@0.1.2',
+  })
+
+  // and then linking the message back to the PO in Medusa
+  await medusaSdk.admin.workflows.linkOutboundMessageToPO.run({
+    input: { purchase_order_id: po.id, message_id: msg.id },
+  })
   ```
 
-- Read-only tools (`query_po`, `query_similar_lines`, `read_file_text`) are rewired to call `query.graph` / `query.index` via Medusa SDK instead of Drizzle.
+- Read-only tools split similarly: procurement reads via Medusa `query.graph` / `query.index`; message reads via messaging API (`GET /messages?vendor_id=...`).
+- A new subscriber in `apps/procurement-agent/src/subscribers/message-received.ts` consumes the Redis stream that messaging publishes to. When a procurement-relevant message arrives (classified as `order-request`, `vendor-confirmation`, `bill`, etc.), the subscriber triggers a Temporal workflow.
 
 ### 8.2 Temporal workflow structure for this slice
 
@@ -388,9 +424,14 @@ purchaseOrderWorkflow (parent, long-running)
 
 Receive/Pay child workflows are stubs in this slice — they exist as no-op functions so the parent workflow compiles, but they're not exercised.
 
-### 8.3 Medusa SDK setup
+### 8.3 Client setup
 
-`apps/procurement-agent/src/medusa-sdk.ts` initializes the Medusa admin SDK with a long-lived API token. In production this is set via env var (`MEDUSA_AGENT_TOKEN`). In dev, the agent reads it from a `.env` file at the monorepo root. The token has full admin scope; tighter scoping is a follow-on hardening task.
+Two clients live under `apps/procurement-agent/src/clients/`:
+
+- **`medusa-sdk.ts`** — initializes the Medusa admin SDK with a long-lived API token. Env var `MEDUSA_AGENT_TOKEN`. Full admin scope in v1; tighter scoping is a follow-on hardening task.
+- **`messaging-client.ts`** — typed HTTP client for the messaging service. Auth via API key (`MESSAGING_API_KEY`). Generated types come from `packages/shared-types/messaging.ts`.
+
+Both URLs (`MEDUSA_URL`, `MESSAGING_URL`) are env-configurable so the same agent code runs in dev (localhost) and prod.
 
 ### 8.4 Observability
 
@@ -399,7 +440,7 @@ Receive/Pay child workflows are stubs in this slice — they exist as no-op func
 
 ### 8.5 Deployment
 
-The agent is a separate Node process (Temporal worker). In production it runs on the same Fly/Render/Vercel environment as Medusa but as a distinct service. In dev, `pnpm dev` (turbo task) starts Medusa + agent + storefront concurrently.
+The agent is a separate Node process (Temporal worker). In production it runs on the same hosting environment as Medusa and the messaging service, but as a distinct service. In dev, `pnpm dev` (turbo task) starts Medusa + messaging + agent + storefront concurrently.
 
 ## 9. Admin UI
 
@@ -425,13 +466,14 @@ Three new admin sections in `apps/backend/src/admin/`, built with Medusa's admin
   - **Files** — attached files with preview
   - **Linked emails** — outbound and inbound emails tied to this PO
 
-### 9.3 Inbox (multi-channel)
+### 9.3 Inbox (Medusa admin widget over messaging API)
 
-The UI keeps the "Inbox" metaphor because it's intuitive for the operator — it's the queue of inbound things to deal with — even though the underlying module is `messaging`, not email-specific.
+The inbox UI lives inside Medusa admin (operators have one place to be) but doesn't fetch from Medusa — it's a widget that calls the messaging service's HTTP API. This keeps Medusa from owning messaging data while still giving the operator a unified admin experience.
 
-- **List page**: inbound messages grouped by thread; columns: channel badge (email / SMS / WhatsApp / etc.), from_identity, subject (or first line for channels without subjects), classification, vendor (if matched), received_at. Filterable by channel, classification, vendor.
-- **Thread page**: messages in order across the conversation; classification result for each; "Reclassify" action that re-runs `classifyInboundMessageWorkflow`; "Create PO from this thread" action that hands off to the agent's `place-drafting` capability. Channel-specific message details (raw headers, voice transcript confidence, photo OCR) shown in an expandable per-message panel.
-- **Channel accounts page**: register and configure `ChannelAccount` records — add a new email inbox, register an SMS number, connect a WhatsApp Business account, etc. Channel-specific config rendered from the `channel_config` jsonb via a registered renderer per channel.
+- **List page** (`/admin/inbox`): renders inbound messages grouped by thread. Fetches from `GET /inbound` on the messaging service. Columns: channel badge (email / SMS / WhatsApp / etc.), from_identity, subject (or first line for channels without subjects), classification, vendor (if matched — resolves vendor_id ref against Medusa), received_at. Filterable by channel, classification, vendor.
+- **Thread page**: fetches `GET /threads/:id` from messaging. Shows messages in order across the conversation; classification result for each; "Reclassify" action that POSTs to messaging service; "Create PO from this thread" action that triggers the procurement-agent's `place-drafting` capability via a separate trigger endpoint. Channel-specific message details (raw headers, voice transcript confidence, photo OCR) shown in an expandable per-message panel.
+- **Channel accounts page**: register and configure `ChannelAccount` records on the messaging service — add an email inbox, register an SMS number, connect a WhatsApp Business account, etc. Channel-specific config rendered from the `channel_config` jsonb via a registered renderer per channel. Credentials (IMAP passwords, Twilio tokens, etc.) are written via the messaging service's API and stored in a secrets-aware store on that service — not in Medusa.
+- **PO detail page** (under §9.2) embeds a "Messages" tab that also fetches from messaging — same widget code, filtered by `purchase_order_id`.
 
 ## 10. Data migration
 
@@ -502,13 +544,13 @@ These principles apply to this slice and to every future slice. They are codifie
 
 Every integration with an external system uses a `system` enum (or `channel` enum for messaging) + a `system_payload` (or `channel_payload`) jsonb. The vendor name appears **only as an enum value**, never as part of a module, table, column, or workflow name.
 
-| Domain | Module | Discriminator enum | Initial values |
+| Domain | Where it lives | Discriminator enum | Initial values |
 |---|---|---|---|
-| Communications | `messaging` (this slice) | `channel` | `email` / `sms` / `whatsapp` / `slack` / `voice` / `manual` / `photo` |
-| Point-of-sale | `pos` (Slice 4) | `system` | `toast` / `clover` / `square` / `lightspeed` / `shopify_pos` |
-| Accounting | `accounting` (Slice 3) | `system` | `qbo` / `xero` / `freshbooks` |
-| Bill pay | `billPayment` (Slice 3) | `system` | `melio` / `stripe` / `ach_direct` |
-| Banking | `bankingFeed` (later) | `system` | `plaid` / `mx` / `yodlee` |
+| Communications | `apps/messaging/` peer service (§16) | `channel` | `email` / `sms` / `whatsapp` / `slack` / `voice` / `manual` / `photo` |
+| Point-of-sale | `pos` Medusa module (Slice 4) | `system` | `toast` / `clover` / `square` / `lightspeed` / `shopify_pos` |
+| Accounting | `accounting` Medusa module (Slice 3) | `system` | `qbo` / `xero` / `freshbooks` |
+| Bill pay | `billPayment` Medusa module (Slice 3) | `system` | `melio` / `stripe` / `ach_direct` |
+| Banking | `bankingFeed` Medusa module (later) | `system` | `plaid` / `mx` / `yodlee` |
 
 A new integration is added by: (1) extending the relevant enum, (2) writing a channel-/system-specific adapter for the worker that ingests or sends, (3) defining the jsonb payload shape inside that adapter. **No schema migration is required to add a new integration of an existing domain.**
 
@@ -516,7 +558,7 @@ A new integration is added by: (1) extending the relevant enum, (2) writing a ch
 
 The agent layer and Medusa workflows operate against the normalized fields (`address`, `body_plain`, `received_at`, etc.) and never branch on specific enum values. Channel-/system-specific behavior lives in adapters under `apps/procurement-agent/src/adapters/<system>/` (or equivalent for non-agent integrations). The Medusa side stays integration-agnostic.
 
-This means: when an `OutboundMessage` is sent, the workflow looks up its `ChannelAccount`, reads `channel`, and dispatches to the adapter registered for that channel. The workflow doesn't know whether it's sending email or SMS.
+This means: when an `OutboundMessage` is sent, the messaging service looks up its `ChannelAccount`, reads `channel`, and dispatches to the adapter registered for that channel. The service doesn't know whether it's sending email or SMS at the API level — that's the adapter's job.
 
 ### 15.3 Single-table for related-but-channel-varying entities
 
@@ -527,3 +569,123 @@ The cost: jsonb payloads are loosely typed at the DB level. We accept this and e
 ### 15.4 LIM-specific naming is fine; vendor-platform-specific naming is not
 
 "LIM" appears in artifacts that are genuinely LIM-specific: PO number format (`LIM-YYYY-NNNN`), the procurement workflow rhythms, default unit conventions. "Lagos International Market" is the business; the platform models that business honestly. Vendor-platform names (Toast, QBO, Melio, Twilio, Notion, etc.) are not LIM-specific — they are choices that could change — and so they don't appear in the names of our own concepts.
+
+## 16. Messaging service (`apps/messaging/`)
+
+A standalone Node service that models inbound and outbound communications across **any channel** (email / SMS / WhatsApp / Slack / voice / manual / photo). Sits next to Medusa in the monorepo and runs as a peer process. Owns its own data, its own channel adapters, and a small HTTP API. Consumed by Medusa (admin widgets), the procurement-agent (Temporal activities), and — in future slices — any other consumer that needs to send or receive structured messages (storefront customer support, internal ops, etc.).
+
+ADR 0011 — "External system integrations abstracted by `system` enum" — formally records this design alongside the parallel pattern for POS / accounting / banking.
+
+### 16.1 Stack
+
+| Component | Choice |
+|---|---|
+| Runtime | Node 20+ (same as Medusa) |
+| HTTP framework | Fastify (or Hono — decide in implementation; both are fast, typed, and minimal) |
+| ORM | Drizzle (matches stealth's existing tooling and what the catalog ETL author already knows) |
+| Database | Same Postgres instance as Medusa, **separate schema** (`messaging`). Drizzle migrations live under `apps/messaging/drizzle/`. Splitting into a separate DB is trivial later if scale demands it. |
+| Event publishing | Redis Streams (using the Redis instance already configured for Medusa's Workflow Engine in `apps/backend/medusa-config.ts`). Stream name: `messaging.events`. |
+| Secrets | Channel credentials (IMAP password, Twilio auth token, WhatsApp access token, Slack bot token, etc.) stored encrypted in the `messaging` schema using a key from env (`MESSAGING_SECRETS_KEY`); accessed only by adapter code. |
+
+### 16.2 Data model
+
+Same shape as the earlier in-Medusa design, now in Drizzle on the `messaging` schema:
+
+- **`channel_account`** — id (uuid), channel (enum: `email` / `sms` / `whatsapp` / `slack` / `voice` / `manual` / `photo`), address (text — `yemi@lagosinternationalmarket.com`, `+1-555-0100`, `#procurement` Slack channel, etc.), display_name, channel_config (jsonb, channel-specific config — outbound capture method for email, Twilio Account SID for SMS, etc.), secrets_ref (text, nullable — opaque pointer into the encrypted-secrets table), is_active, created_at, updated_at.
+- **`message_thread`** — id, channel (enum), external_thread_id (the channel's native thread ID — email References-header chain, SMS phone-number-pair, WhatsApp conversation ID, Slack `thread_ts`), vendor_id (text, nullable — opaque reference to a Medusa Vendor; set by procurement-agent after vendor-match), first_message_at, last_message_at, message_count.
+- **`inbound_message`** — id, channel_account_id (FK), thread_id (FK, nullable until thread is resolved), external_message_id (channel's native ID; unique-per-channel), from_identity (text), to_identities (text[]), subject (nullable), body_plain (text), body_html (text, nullable), received_at (timestamp), channel_payload (jsonb — raw email headers, Twilio webhook body, WhatsApp Cloud API payload, voice transcript with confidence scores, etc.), classification (text, nullable — set by an external classifier via API), classified_at (nullable), vendor_id (text, nullable — opaque ref).
+- **`outbound_message`** — id, channel_account_id (FK), thread_id (FK, nullable for new conversations), external_message_id (nullable until sent), in_reply_to_external_id (nullable), to_identities (text[]), cc_identities (text[], nullable), subject (nullable), body_plain, body_html (nullable), drafted_by (text, nullable — caller identifier, e.g., `place-drafting@0.1.2`), gate_status (enum: `draft` / `approved` / `sent` / `cancelled`), sent_at (nullable), purchase_order_id (text, nullable — opaque ref), channel_payload (jsonb — channel-specific send metadata, message-tracking IDs, etc.).
+- **`attachment`** — id, message_id (FK — points to inbound OR outbound; discriminated by `message_direction` column), sha256 (unique), original_name, mime_type, size_bytes, storage_path. Email PDFs, WhatsApp images, dock-photo uploads.
+- **`channel_secret`** *(encrypted)* — id (referenced by `channel_account.secrets_ref`), encrypted_payload (bytea), kdf_meta (jsonb). Decrypted in-process by adapter code using `MESSAGING_SECRETS_KEY`.
+
+`vendor_id` and `purchase_order_id` are stored as plain text — the messaging service has no foreign-key relationship to Medusa. Consumers (procurement-agent, Medusa admin widget) join across systems at query time. This is the explicit boundary: messaging knows about messages, not about LIM's procurement concepts.
+
+### 16.3 Channel adapters
+
+Each adapter lives under `apps/messaging/src/adapters/<channel>/` and exports a uniform interface:
+
+```ts
+export interface ChannelAdapter {
+  channel: ChannelEnum
+  // Inbound side: how this channel ingests
+  ingestion: 'webhook' | 'poll'
+  registerWebhook?(app: FastifyInstance): void   // adapter mounts its own webhook route
+  startPoller?(account: ChannelAccount): Cancel  // adapter runs its own poll loop
+  // Outbound side: how this channel sends
+  send(account: ChannelAccount, message: OutboundMessageDraft): Promise<SendResult>
+}
+```
+
+Initial adapters in Slice 1:
+
+| Channel | Ingestion | Send | Notes |
+|---|---|---|---|
+| `email` | IMAP poll (Gmail OAuth where available, fallback to IMAP password) | SMTP / Gmail API | The primary channel for v0 — Yemi's mailbox, Grace's mailbox, shared `procurement@` archive |
+| `manual` | API only (no ingestion adapter — form posts) | n/a | "Yemi typed: vendor confirmed verbally" — covers the gap where there's no native channel |
+| `photo` | API only (file upload) | n/a | Dock photos, paper invoices captured by phone |
+
+Deferred to Slice 2+: `sms` (Twilio), `whatsapp` (Meta Cloud API), `slack` (Events API), `voice` (transcript ingestion). The schema accommodates them today; the adapters get implemented when the workflows need them.
+
+### 16.4 HTTP API
+
+All routes under `/v1/`. Authentication via API key in `Authorization: Bearer <MESSAGING_API_KEY>` header. Issued per consumer (one for procurement-agent, one for Medusa admin, one for storefront when it arrives).
+
+| Route | Method | Description |
+|---|---|---|
+| `/v1/channel-accounts` | GET / POST | List / create channel accounts. POST writes secrets via the encrypted-secrets table. |
+| `/v1/channel-accounts/:id` | GET / DELETE | Retrieve / soft-delete. |
+| `/v1/inbound` | GET | List inbound messages. Query params: `channel`, `vendor_id`, `classification`, `from_identity`, `received_after`, `received_before`, `limit`, `cursor`. |
+| `/v1/inbound` | POST | Create an inbound message (used by channel adapters when ingesting; also by `manual` channel form). |
+| `/v1/inbound/:id` | GET | Retrieve with attachments and channel_payload. |
+| `/v1/inbound/:id/classify` | POST | Set classification + classified_at. Body: `{ classification: string, classifier_metadata?: object }`. |
+| `/v1/inbound/:id/link-vendor` | POST | Set vendor_id. Also propagates to the message's thread. Body: `{ vendor_id: string }`. |
+| `/v1/outbound` | GET / POST | List / create outbound drafts. |
+| `/v1/outbound/:id` | GET / DELETE | Retrieve / cancel (soft-delete). |
+| `/v1/outbound/:id/approve` | POST | Move gate_status from `draft` to `approved`. |
+| `/v1/outbound/:id/send` | POST | Dispatch to channel adapter; updates gate_status to `sent` on success. |
+| `/v1/threads` | GET | List threads. Query params: `channel`, `vendor_id`, `purchase_order_id` (via joined outbound), `updated_after`, `limit`, `cursor`. |
+| `/v1/threads/:id` | GET | Retrieve with full message timeline (interleaved inbound + outbound, ordered by occurred_at). |
+| `/v1/attachments/:id` | GET | Download or pre-signed URL. |
+
+### 16.5 Event publishing
+
+When a state change happens, the service publishes to the `messaging.events` Redis stream. Event shape:
+
+```ts
+type MessagingEvent =
+  | { type: 'inbound.received',  inbound_id: string, channel: ChannelEnum, classification: null, received_at: string }
+  | { type: 'inbound.classified', inbound_id: string, classification: string, classified_at: string }
+  | { type: 'inbound.vendor_linked', inbound_id: string, vendor_id: string }
+  | { type: 'outbound.drafted', outbound_id: string, drafted_by: string, purchase_order_id: string | null }
+  | { type: 'outbound.approved', outbound_id: string }
+  | { type: 'outbound.sent', outbound_id: string, external_message_id: string, sent_at: string }
+```
+
+Consumers (procurement-agent for now) read the stream as a durable subscriber. Replay is possible because Redis Streams retain history.
+
+### 16.6 Medusa admin integration
+
+Medusa admin widgets call the messaging service at `MESSAGING_URL/v1/...` from the browser, with the user's session-derived API key. The widget code lives in `apps/backend/src/admin/messaging-widgets/` and is registered into Medusa's admin extension system as:
+
+- `/inbox` route (top-level admin page) — list + thread views
+- Tab embedded in `/admin/vendors/:id` — recent inbound messages for this vendor (resolves the vendor_id reference on the messaging side)
+- Tab embedded in `/admin/purchase-orders/:id` — messages tied to this PO
+
+The widget treats the messaging service as a generic typed REST API; it doesn't know it's the same monorepo. This means the same UI code can later be lifted into a different admin shell if needed.
+
+### 16.7 What this slice does NOT include
+
+- **SMS / WhatsApp / Slack / voice adapters.** Schema supports them; implementation deferred.
+- **Cross-account dedup or unified inbox across operators.** v0 has each operator's email inbox modeled as a separate `ChannelAccount`; the agent classifies independently per account.
+- **Full audit log of API requests.** Logging exists; structured audit (who classified what, when) is a Slice 2+ hardening item.
+- **Multi-tenancy.** v0 is single-tenant (LIM). A `tenant_id` field is added to every table from day one to make future multi-tenancy possible without re-migration, but no enforcement is wired up.
+
+### 16.8 Success criteria for the messaging service specifically
+
+In addition to the slice-wide criteria in §13, the messaging service is done when:
+
+1. A real inbound email lands in an IMAP-watched mailbox, becomes an `inbound_message` row within 60 seconds, and emits an `inbound.received` event the procurement-agent consumes.
+2. A manual entry (form POST to `/v1/inbound`) creates a message with `channel='manual'` and produces the same downstream behavior.
+3. An outbound draft created via `POST /v1/outbound` can be approved and sent via the email adapter, with `sent_at` and `external_message_id` populated.
+4. The Medusa admin inbox widget renders inbound messages with channel badges and is filterable by vendor.
+5. The service deploys as a distinct process; restart loses no in-flight messages (writes are durable; channel adapter retries pick up where they left off).

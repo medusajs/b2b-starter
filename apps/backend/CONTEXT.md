@@ -1,94 +1,107 @@
 # Backend — Domain Language
 
-The shared language for Lagos International Market's procurement and commerce backend. Adopted from stealth's procurement glossary (Place / Receive / Pay) plus B2B commerce concepts from the Medusa starter.
+LIM's procurement and commerce backend. Adopted from stealth's procurement glossary (Place / Receive / Pay) plus B2B commerce concepts from the Medusa starter.
 
 When this document and code disagree, fix the code.
 
 ## Phases
 
-- **Place** — the phase of agreeing on an order with the Vendor. States: `draft`, `awaiting_payment`, `sent`, `needs_review`, `confirmed`, `cancelled`.
-- **Receive** — the phase of getting the goods. (Out of scope until Slice 2.)
-- **Pay** — the phase of settling the bill. (Out of scope until Slice 3.)
+- **Place** — agreeing on an order with a Vendor.
+- **Receive** — getting the goods. (Out of scope until Slice 2.)
+- **Pay** — settling the bill. (Out of scope until Slice 3.)
 
-## Core records
+## Language
 
-### Product / ProductVariant / ProductCategory / ProductTag (Medusa built-in)
+### Procurement domain (custom modules)
 
-LIM's canonical items live as Medusa **`Product`** records. A given product ("Seboye Yam Flour 8 lbs") may have multiple **`ProductVariant`** records representing pack-size variants ("case of 12", "single unit") via the **`ProductOption`** `pack-format`. Brand is a **`ProductTag`** ("Seboye Foods", "Yusol", "Peak"). The locked LIM taxonomy (3 menus / 6 groups / ~63 subgroups) is a hierarchical **`ProductCategory`** tree, seeded once.
+**Vendor**:
+A supplier of goods to LIM, with its own status, rating, ordering rhythm, freight defaults, payment terms, and `agent_authority`.
+_Avoid_: supplier, seller.
 
-Native fields used: `Product.title / description / handle / origin_country / hs_code / weight / length / height / width / material`; `ProductVariant.sku / barcode / ean / upc`; `Image` (one-to-many on Product).
+**VendorContact**:
+Additional contacts on a Vendor beyond the denormalized main + AP contact (e.g., warehouse manager, driver dispatch).
 
+**VendorTag**:
+Free-text categorical labels for filtering vendors (`dry-goods`, `frozen`, `produce`).
+
+**VendorItem**:
+Per-(vendor, variant) knowledge — vendor SKU, cost-price history, lead time, vendor MOQ. Joins a `Vendor` to a Medusa `ProductVariant`.
+
+**PurchaseOrder** (PO):
+The agreement to buy specific items from a Vendor. Lives across Place / Receive / Pay until paid or written off. Identified by `LIM-YYYY-NNNN` and a UUID.
+_Avoid_: order (ambiguous with sales orders), purchase, transaction.
+
+**POLineItem**:
+A single ordered line on a PO. References a Medusa `ProductVariant` (nullable for free-text lines drafted by the agent for unfamiliar products).
+
+**POSnapshot**:
+A frozen, full copy of a PO + line items at a terminal moment (PO sent, payment initiated). Carries a reference to the actual rendered email/PDF the vendor saw. Audit-grade; rare.
+
+**ProductProcurementAttributes**:
+Procurement-specific extension on a Medusa `Product` — `storage_type`, `is_perishable`, `default_buy_unit`, `notes_for_agent`. 1:1 with Product.
+
+### Platform infrastructure (agnostic modules)
+
+**Activity**:
+An immutable, append-only record of something that happened on the platform — a state transition, an agent observation, a human action. Polymorphic by target entity (PO, vendor, product, message thread, etc.). Used by every domain (procurement, catalog-health, accounting, customer support…).
+_Avoid_: "event" alone (collides with Medusa's runtime Event Bus); "log entry" (too generic).
+
+**Attachment**:
+The persistent metadata for a stored file (PDF, photo, email body) — SHA256-deduped, classified by `file_kind`, with provenance. Storage backend is Medusa's File module; `Attachment` adds the metadata layer the File module doesn't persist.
+
+**AttachmentLink**:
+A many-to-many link recording that an `Attachment` is attached to a specific target entity (PO, bill, message thread, audit issue…). Polymorphic by `target_entity_type` + `target_entity_id`.
+
+### Medusa built-ins used as-is
+
+**Product / ProductVariant / ProductCategory / ProductTag / Image**:
+LIM's canonical items live as Medusa `Product` records. Pack-size variants ("case of 12", "single unit") are `ProductVariant`s via the `ProductOption` `pack-format`. The LIM taxonomy (3 menus / 6 groups / ~63 subgroups) is a hierarchical `ProductCategory` tree. Brand is a `ProductTag`.
 _Avoid_: parallel-modeling an "Item" entity. LIM concepts map onto Medusa primitives.
 
-### ProductProcurementAttributes (custom; 1:1 extension of Product)
+**Customer / CustomerGroup / Company / Employee**:
+End-customer concepts (the B2B businesses we sell to). Used by the existing B2B starter; orthogonal to Vendor.
 
-Procurement-specific attributes Medusa Product doesn't natively model: `storage_type` (`ambient` / `refrigerated` / `frozen`), `is_perishable`, `default_buy_unit` (e.g. `case`, `pallet` — overrides variant unit for procurement context), `notes_for_agent` (agent context distinct from public description).
+### Agent-side terms
 
-### VendorItem (custom)
+**`agent_authority`**:
+Per-vendor control over what stealth may commit autonomously. `full_auto` (commits without human approval), `draft_only` (drafts but never sends — default), `review_only` (observes only).
 
-The per-(vendor, variant) join. Holds vendor-side identifiers (`vendor_sku`, `vendor_description`), cost-price history (`last_unit_price`, `last_ordered_at`, `currency`), and agent defaults (`default_order_qty`, `lead_time_days`, `min_order_qty`). Linked to Vendor (custom) and ProductVariant (Medusa built-in).
+**Tone reference**:
+A single curated past inbound message pinned per Vendor used to calibrate the tone of agent-drafted outbound. Set by hand; never auto-updated.
 
-Medusa's `Pricing` module handles SELL prices (per-customer-group, per-currency, per-region). VendorItem holds vendor COST prices — orthogonal concern.
+**Global pause**:
+A platform-wide flag (Redis-backed) suppressing all auto-fires. Per-vendor authority is checked first; if global pause is on, no auto-fire happens regardless.
 
-### PurchaseOrder (custom)
+**Placeholder**:
+An unresolved field in an agent draft (`[NEEDS PRICE]`, `[NEW ITEM]`, `[STALE: $X, last seen DATE]`). Sending is gated until cleared.
 
-The agreement to buy specific items from a Vendor. Lives across all three phases (Place / Receive / Pay) until paid or written off. Identified by a human-readable PO number (`LIM-YYYY-NNNN`) and an internal UUID. Three FSM enum columns track state per phase (`place_status`, `receive_status`, `pay_status`). Snapshot fields (`payment_terms_snapshot`, `currency`, ship-to / bill-to addresses) capture state at PO creation time so a PO sent yesterday renders correctly even if the vendor's data changes today.
+**Coexistence**:
+The pattern by which humans and the agent share authority without explicit take-over. The agent re-reads state at every decision point and adapts. Workflows are idempotent. Medusa state-change events become Temporal signals so long-running workflows notice human edits.
 
-_Avoid_: order (ambiguous — sales order vs PO; prefer "PO"), purchase, transaction.
+## Relationships
 
-### POLineItem (custom; inside `purchaseOrder` module)
+- A **Vendor** has many **PurchaseOrders**.
+- A **PurchaseOrder** has many **POLineItems**.
+- A **POLineItem** references a Medusa **ProductVariant** (zero-or-one — null for free-text lines).
+- A **Vendor** has many **VendorItems**; a **ProductVariant** has many **VendorItems** (one per vendor that carries it).
+- A **Product** has 0 or 1 **ProductProcurementAttributes**.
+- A **PurchaseOrder** has 0 or many **POSnapshots** (one per terminal moment).
+- An **Activity** targets at most one entity (by `target_entity_type` + `target_entity_id`) — usually a PurchaseOrder, Vendor, or Product.
+- An **Attachment** is linked to entities via **AttachmentLinks** (many-to-many).
 
-A single ordered line on a PO. References a Medusa **`ProductVariant`** via link (`variant_id`, nullable for free-text lines drafted by the agent for unfamiliar products). Carries snapshots of SKU values at line creation so the line stays accurate if the variant or vendor SKU changes later. `placeholder_flags` tracks which fields are unresolved (`[NEEDS PRICE]`, `[NEW ITEM]`, `[STALE]`) — sending is gated until all are cleared.
+## Example dialogue
 
-### POSnapshot (custom; inside `purchaseOrder` module)
+> **Dev**: "When stealth drafts a PO for Yusol, where does the resulting PO live?"
+> **Owner**: "As a `PurchaseOrder` in Medusa, with line items referencing the right `ProductVariant`s. The activity timeline picks up the `po_drafted` Activity and shows it in admin with stealth as the source."
 
-A frozen, full copy of a PO + line items at a terminal-ish moment (PO sent, payment initiated). Carries a `rendered_email_file_id` pointing to the actual PDF/email the vendor saw. Audit-grade; rare.
-
-### Vendor
-
-A supplier of goods to LIM. Has payment terms, a primary order contact, and an accounting contact. Vendors carry their own status, rating, ordering rhythm, freight defaults, and an `agent_authority` setting that bounds what stealth is allowed to commit on their behalf.
-
-_Avoid:_ supplier, seller.
-
-Key fields by intent:
-
-- **Identity** — `name`, `legal_name`, `tax_id` (encrypted; for 1099 reporting), `account_number_at_vendor` (your customer-ID at their end), `website_url`
-- **Status & trust** — `status` (`active` / `inactive` / `on_hold`), `rating` (1-5), `agent_authority` (`full_auto` / `draft_only` / `review_only`)
-- **Address** — flat fields (`address_street`, `address_city`, `address_state`, `address_postal`, `address_country`)
-- **Primary contact** — `main_contact_name`, `main_contact_email`, `main_contact_phone`
-- **AP / accounting contact** — `ap_contact_name`, `ap_email`, `ap_phone`, `statement_email_or_url`
-- **Ordering rhythm** — `order_day`, `cut_off_time`, `frequency`, `follow_up_level`, `default_lead_time_days`, `order_minimum_text`, `ordering_instructions`
-- **Freight** — `vendor_sends_truck`, `we_arrange_freight`, `freight_fee`, `pallet_fee`
-- **Payment** — `payment_terms`, `net_starts_from`, `preferred_payment_method` (terms used in Place; method execution deferred to Pay)
-- **Currency** — `currency` (ISO 4217, default `USD`)
-- **Agent context** — `tone_reference_message_id` (opaque ref to messaging service), `notes`
-
-### VendorContact
-
-Additional contacts beyond the denormalized main + AP contact on Vendor. Use when a vendor has more than two relevant humans (e.g., warehouse manager, driver dispatch, sales rep).
-
-### VendorTag
-
-Free-text categorical labels for filtering and grouping vendors. Examples: `dry-goods`, `frozen`, `produce`, `wholesale-only`.
-
-## Agent-side terms
-
-- **`agent_authority`** — Per-vendor control over what stealth may commit autonomously.
-  - `full_auto` — stealth drafts, sends, and marks state without explicit human approval (downstream gates still apply).
-  - `draft_only` — stealth drafts but never sends or marks state without explicit human approval. **Default for new and seeded vendors.**
-  - `review_only` — stealth observes and classifies but does not draft.
-
-- **Tone reference** — A single curated past inbound message pinned per Vendor (`tone_reference_message_id`) used to calibrate the tone of agent-drafted outbound. Set by hand; never auto-updated. Distinct from thread context (recent messages on the current thread).
-
-- **Global pause** — A platform-wide flag (Redis-backed) suppressing all auto-fires. Used when an operator wants stealth to stand down temporarily. Per-vendor authority is checked first; if global pause is on, no auto-fire happens regardless of authority.
-
-- **Placeholder** — An unresolved field in an agent draft (`[NEEDS PRICE]`, `[NEW ITEM]`, `[STALE: $X, last seen DATE]`). Visible in rendered output; sending is gated until cleared.
-
-- **Coexistence** — The pattern by which human edits and agent activity coexist without explicit take-over. The agent re-reads state at every decision point and adapts. Workflows are idempotent so concurrent transitions both succeed (the second is a no-op). Medusa state-change events become Temporal signals so long-running agent workflows notice and respond to human edits.
+> **Dev**: "And if Yusol's name in Notion was 'Yusol Foods' but their invoices come from 'YSL Trading' — which is the Vendor?"
+> **Owner**: "`Yusol Foods` is the Vendor name. `YSL Trading` goes in `legal_name`. The agent uses the legal name on the PO header but addresses outbound emails to `main_contact_email`."
 
 ## Flagged ambiguities
 
-- **"Order"** — colloquially ("the Ilham order") refers to the **PO** for that vendor. In writing, prefer **PO** to avoid confusion with sales orders (Toast / storefront).
-- **"Account"** — never used bare. Disambiguate: **Vendor** (the business), **ChannelAccount** (a registered identity at a messaging channel), or `account_number_at_vendor` (your customer ID at the vendor).
-- **"Status"** — disambiguate which kind: **Vendor.status** (the relationship), **PurchaseOrder.place_status** (the Place-phase FSM state), etc.
-- **"Cancelled"** — has multiple flavors. **Cancelled** is the Place-phase terminal state (we backed out before/during ordering). **Vendor Cancelled** is the Receive-phase terminal (vendor reneged). **Written Off** is the Pay-phase terminal (no settlement happened).
+- **"Order"** — colloquially ("the Ilham order") refers to the **PO**. In writing, always prefer **PO** to avoid confusion with sales orders.
+- **"Account"** — never used bare. Disambiguate: **Vendor** (the business), **ChannelAccount** (a registered messaging identity), or `account_number_at_vendor` (your customer ID at the vendor).
+- **"Status"** — disambiguate which: **Vendor.status** (the relationship), **PurchaseOrder.place_status** / `.receive_status` / `.pay_status` (FSM states per phase).
+- **"Cancelled"** — three flavors: **Cancelled** (Place-phase terminal — we backed out), **Vendor Cancelled** (Receive-phase terminal — vendor reneged), **Written Off** (Pay-phase terminal — no settlement happened).
+- **"Event"** — when domain people say "event" they mean an **Activity** (something that happened, recorded in the activity log). Don't confuse with Medusa's `Event Bus` (runtime pub/sub) or Temporal signals.
+- **"File"** — domain people say "file"; the platform persists this as an **Attachment** with metadata. Medusa's `File` module is the storage backend (provider abstraction).

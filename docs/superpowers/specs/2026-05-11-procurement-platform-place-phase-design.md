@@ -184,7 +184,7 @@ Each module follows the standard Medusa pattern: `src/modules/<name>/{models/, s
 
 **Entities:**
 
-- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, tone_reference_email_id (nullable; FK to `inboxMail.IncomingEmail`).
+- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, tone_reference_message_id (nullable; `model.text()` referencing `messaging.InboundMessage` — the link in §5.7 carries the relationship).
 - `VendorContact` — id, vendor_id (FK), name, role, email, phone.
 - `OrderingInstruction` — id, vendor_id (FK), instruction_text, cutoff_time (nullable), order_days (text[], nullable).
 
@@ -217,13 +217,18 @@ Each module follows the standard Medusa pattern: `src/modules/<name>/{models/, s
 
 Service-level invariant: events are append-only. No update workflow exists for `Event`.
 
-### 5.5 `inboxMail`
+### 5.5 `messaging`
+
+The module models inbound and outbound communications across **any channel**, not just email. Channel-specific quirks live in a `channel_payload: jsonb` field; the rest of the schema is normalized so the agent can treat all messages uniformly. See §15.1 for the underlying design principle.
 
 **Entities:**
 
-- `Inbox` — id, address (e.g., `yemi@lagosinternationalmarket.com`), display_name, outbound_capture_method (enum: `api` / `sent_folder_watch` / `bcc` / `none`), is_active.
-- `IncomingEmail` — id, inbox_id (FK), message_id (header, unique), thread_id (header), from_address, to_addresses (text[]), subject, body_plain, body_html, received_at, raw_headers (jsonb), classification (text, nullable — set by inbound-classifier), classified_at (nullable), vendor_id (FK via link, nullable — set by vendor-match).
-- `OutgoingEmail` — id, inbox_id (FK), message_id (nullable until sent), in_reply_to (nullable), to_addresses (text[]), cc_addresses (text[]), subject, body_plain, body_html, sent_at (nullable; null = draft), drafted_by_capability (text, nullable), gate_status (enum: `draft` / `approved` / `sent` / `cancelled`), purchase_order_id (FK via link, nullable).
+- `ChannelAccount` — id, channel (enum: `email` / `sms` / `whatsapp` / `slack` / `voice` / `manual` / `photo`), address (the identity at that channel — `yemi@lagosinternationalmarket.com`, `+1-555-0100`, `#procurement` Slack channel, etc.), display_name, channel_config (jsonb — channel-specific config: outbound capture method for email, Twilio account SID for SMS, WhatsApp Business phone-number ID, etc.), is_active.
+- `MessageThread` — id, channel (enum, same as ChannelAccount.channel), external_thread_id (the channel's native thread/conversation identifier — email References header chain, SMS phone-number-pair, WhatsApp conversation ID, Slack thread_ts), vendor_id (`model.text()` — link in §5.7; nullable until matched), first_message_at, last_message_at, message_count.
+- `InboundMessage` — id, channel_account_id (FK same module), thread_id (FK same module, nullable until thread is resolved), external_message_id (channel's native ID; unique per channel), from_identity (text — email address, phone number, Slack user ID, etc.), to_identities (text[]), subject (nullable — email has it; SMS/WhatsApp don't), body_plain, body_html (nullable), received_at, channel_payload (jsonb — raw email headers, Twilio webhook body, WhatsApp Cloud API payload, voice transcript with confidence scores, etc.), classification (text, nullable — set by inbound-classifier), classified_at (nullable), vendor_id (`model.text()` — link in §5.7; nullable until matched).
+- `OutboundMessage` — id, channel_account_id (FK same module), thread_id (FK same module, nullable for new conversations), external_message_id (nullable until sent), in_reply_to_external_id (nullable), to_identities (text[]), cc_identities (text[], nullable), subject (nullable), body_plain, body_html (nullable), sent_at (nullable; null = draft), drafted_by_capability (text, nullable), gate_status (enum: `draft` / `approved` / `sent` / `cancelled`), purchase_order_id (`model.text()` — link in §5.7; nullable), channel_payload (jsonb — channel-specific send metadata).
+
+The agent operates on `InboundMessage` and `OutboundMessage` uniformly across channels. Adding a new channel (e.g., Telegram) is: add the enum value, write a channel-specific adapter for the worker that ingests/sends, define the `channel_payload` shape in the adapter — **no schema migration**.
 
 ### 5.6 `procurementFile`
 
@@ -244,9 +249,11 @@ Every link is its own file in `apps/backend/src/links/`. All links include `filt
 | `item-vendor-item.ts` | `item` ↔ `item.VendorItem` | Same-module relation; expressed as a normal Mikro relationship via `item_id`, not via `defineLink`. Listed here for completeness — not a separate link file. |
 | `purchase-order-event.ts` | `purchaseOrder` ↔ `procurementEvent` | One-to-many; `filterable: ["id", "event_type", "phase"]` on event side for timeline queries. |
 | `purchase-order-file.ts` | `purchaseOrder` ↔ `procurementFile` | One-to-many; `filterable: ["id", "file_type"]`. |
-| `inbox-incoming-email-vendor.ts` | `inboxMail.IncomingEmail` ↔ `vendor` | Set by vendor-match; nullable. `filterable: ["id", "name"]`. |
-| `outgoing-email-purchase-order.ts` | `inboxMail.OutgoingEmail` ↔ `purchaseOrder` | Outbound PO emails linked to their PO. |
-| `inbox-email-file.ts` | `inboxMail.IncomingEmail` ↔ `procurementFile` | Email attachments. |
+| `inbound-message-vendor.ts` | `messaging.InboundMessage` ↔ `vendor` | Set by vendor-match; nullable. `filterable: ["id", "name"]` on vendor. |
+| `message-thread-vendor.ts` | `messaging.MessageThread` ↔ `vendor` | Threads identified with a vendor. `filterable: ["id", "name"]`. |
+| `outbound-message-purchase-order.ts` | `messaging.OutboundMessage` ↔ `purchaseOrder` | Outbound PO communications (across channels) linked to their PO. |
+| `inbound-message-file.ts` | `messaging.InboundMessage` ↔ `procurementFile` | Attachments — emails carry PDFs, WhatsApp carries photos, etc. |
+| `vendor-tone-reference-message.ts` | `vendor` ↔ `messaging.InboundMessage` | The pinned tone-reference message per vendor (ADR 0009). Single inbound message per vendor; not isList. |
 | `item-line-item.ts` | `item` ↔ `purchaseOrder.POLineItem` | Lines that match a canonical item. Free-text lines have no link. |
 
 Index Module setup is a one-time foundation step at the start of implementation:
@@ -269,9 +276,12 @@ All workflows live in `apps/backend/src/workflows/`. Each is composed of steps f
 | `setVendorToneReferenceWorkflow` | Pin a specific `IncomingEmail` as the tone reference | Clear or restore previous tone_reference_email_id |
 | `createItemWorkflow` | Create canonical Item | Delete item |
 | `createVendorItemWorkflow` | Create or update VendorItem (upsert by `vendor_id + vendor_sku`) | Restore previous VendorItem state |
-| `recordIncomingEmailWorkflow` | Persist an incoming email + emit `email.received` event for the agent | Soft-delete the email record |
-| `recordOutgoingEmailWorkflow` | Persist an outgoing email draft | Soft-delete |
-| `classifyIncomingEmailWorkflow` | Persist classification result from inbound-classifier | Clear classification fields |
+| `createChannelAccountWorkflow` | Register a new `ChannelAccount` for a channel | Soft-delete |
+| `recordInboundMessageWorkflow` | Persist an inbound message (any channel) + resolve or create its thread + emit `message.received` event for the agent | Soft-delete the message and unattached thread |
+| `recordOutboundMessageWorkflow` | Persist an outbound message draft (any channel) | Soft-delete |
+| `markOutboundSentWorkflow` | Mark an outbound message sent and stamp `external_message_id` once the channel adapter confirms delivery | Revert to `approved` state |
+| `classifyInboundMessageWorkflow` | Persist classification result from inbound-classifier | Clear classification fields |
+| `linkInboundMessageToVendorWorkflow` | Set the vendor on an InboundMessage (and its Thread) from vendor-match output | Clear the vendor link |
 | `attachFileToPOWorkflow` | Dedup by SHA256, attach to PO, emit `file_attached` event | Detach link; do not delete file (other POs may reference) |
 | `createPODraftWorkflow` | Atomically: create PO header + line items + initial `po_drafted` event | Cascade delete PO + lines + events for this PO |
 | `editPODraftWorkflow` | Edit line items / header on a Draft PO (state=`draft` only) | Restore previous header + lines from snapshot input |
@@ -307,9 +317,14 @@ New routes under `apps/backend/src/api/admin/`. These are the surface the procur
 | `/admin/vendors/:id` | GET / POST / DELETE | retrieve / `updateVendorWorkflow` / `softDeleteVendorWorkflow` |
 | `/admin/items` | GET / POST | list / `createItemWorkflow` |
 | `/admin/vendor-items` | GET / POST | list / `createVendorItemWorkflow` |
-| `/admin/inbox/emails` | GET / POST | list / `recordIncomingEmailWorkflow` |
-| `/admin/inbox/emails/:id/classify` | POST | `classifyIncomingEmailWorkflow` |
-| `/admin/outbox/emails` | GET / POST | list / `recordOutgoingEmailWorkflow` |
+| `/admin/messaging/channel-accounts` | GET / POST | list / `createChannelAccountWorkflow` |
+| `/admin/messaging/inbound` | GET / POST | list (filterable by `channel`, `vendor_id`, `classification`) / `recordInboundMessageWorkflow` |
+| `/admin/messaging/inbound/:id/classify` | POST | `classifyInboundMessageWorkflow` |
+| `/admin/messaging/inbound/:id/link-vendor` | POST | `linkInboundMessageToVendorWorkflow` |
+| `/admin/messaging/outbound` | GET / POST | list / `recordOutboundMessageWorkflow` |
+| `/admin/messaging/outbound/:id/mark-sent` | POST | `markOutboundSentWorkflow` |
+| `/admin/messaging/threads` | GET | list (filterable by `channel`, `vendor_id`) |
+| `/admin/messaging/threads/:id` | GET | retrieve thread with messages timeline |
 | `/admin/files` | POST | upload + register (compute SHA256 in route, then call workflow) |
 | `/admin/purchase-orders` | GET / POST | list / `createPODraftWorkflow` |
 | `/admin/purchase-orders/:id` | GET / POST | retrieve (with events + files via `query.graph`) / `editPODraftWorkflow` |
@@ -331,9 +346,9 @@ Imported with minimal changes:
 - `src/agents/_shared/` — shared prompt utilities, schema helpers, tool definitions
 - `src/agents/place-drafting/` — drafts a PO from a captured order request
 - `src/agents/vendor-match/` — fuzzy-matches a vendor name from an email to a Medusa Vendor
-- `src/agents/inbound-classifier/` — classifies an incoming email (order request / vendor confirmation / bill / dock photo / chase / other)
-- `src/agents/outbound-classifier/` — classifies an outbound draft before sending
-- `src/agents/slack-intent/` — parses Slack messages into agent intents
+- `src/agents/inbound-classifier/` — classifies an incoming message (any channel: order request / vendor confirmation / bill / dock photo / chase / other)
+- `src/agents/outbound-classifier/` — classifies an outbound draft before sending (any channel)
+- `src/agents/slack-intent/` — parses Slack-channel inbound messages into agent intents (a specialization of the inbound classifier for the Slack channel; lives alongside the general classifier until consolidation makes sense)
 
 Imported with rewrites:
 
@@ -361,12 +376,12 @@ Imported with rewrites:
 ```
 purchaseOrderWorkflow (parent, long-running)
   └── placeChildWorkflow
-        ├── activity: inbound-classifier (if entered via email)
+        ├── activity: inbound-classifier (if entered via any inbound channel)
         ├── activity: vendor-match
         ├── activity: place-drafting (produces structured PO draft)
-        ├── activity: outbound-classifier (validates outbound email)
+        ├── activity: outbound-classifier (validates outbound message)
         ├── signal: human approval (waits, durable)
-        ├── activity: send-email (Gmail/IMAP)
+        ├── activity: send-outbound-message (dispatches to channel adapter — email/SMS/WhatsApp/Slack)
         ├── signal: vendor-confirmed | vendor-changed | timeout
         └── final activity: mark-po-confirmed | mark-po-needs-review
 ```
@@ -410,10 +425,13 @@ Three new admin sections in `apps/backend/src/admin/`, built with Medusa's admin
   - **Files** — attached files with preview
   - **Linked emails** — outbound and inbound emails tied to this PO
 
-### 9.3 Inbox
+### 9.3 Inbox (multi-channel)
 
-- **List page**: incoming emails grouped by thread; columns: from, subject, classification, vendor (if matched), received_at.
-- **Thread page**: messages in order; classification result for each; "Reclassify" action that re-runs `classifyIncomingEmailWorkflow`; "Create PO from this thread" action that hands off to the agent's `place-drafting` capability.
+The UI keeps the "Inbox" metaphor because it's intuitive for the operator — it's the queue of inbound things to deal with — even though the underlying module is `messaging`, not email-specific.
+
+- **List page**: inbound messages grouped by thread; columns: channel badge (email / SMS / WhatsApp / etc.), from_identity, subject (or first line for channels without subjects), classification, vendor (if matched), received_at. Filterable by channel, classification, vendor.
+- **Thread page**: messages in order across the conversation; classification result for each; "Reclassify" action that re-runs `classifyInboundMessageWorkflow`; "Create PO from this thread" action that hands off to the agent's `place-drafting` capability. Channel-specific message details (raw headers, voice transcript confidence, photo OCR) shown in an expandable per-message panel.
+- **Channel accounts page**: register and configure `ChannelAccount` records — add a new email inbox, register an SMS number, connect a WhatsApp Business account, etc. Channel-specific config rendered from the `channel_config` jsonb via a registered renderer per channel.
 
 ## 10. Data migration
 
@@ -473,3 +491,37 @@ This slice is done when **all** of the following are true:
 - Existing catalog-health-worker: `~/Desktop/_Code/Active/catalog-health-worker/`
 - Medusa development conventions: `medusa-dev:building-with-medusa` skill (loaded reference files in `reference/custom-modules.md`, `reference/module-links.md`, `reference/querying-data.md`, `reference/workflows.md`, `reference/scheduled-jobs.md`)
 - Project context: `AGENTS.md`, `apps/backend/CONTEXT.md` (current), to be extended with procurement domain language adopted from `stealth/CONTEXT.md`
+
+## 15. Design principles (cross-cutting)
+
+These principles apply to this slice and to every future slice. They are codified here once so subsequent specs can reference them rather than re-deriving the abstraction each time. A new ADR 0011 — "External system integrations abstracted by `system` enum" — is written as part of this slice's implementation to record them.
+
+### 15.1 No third-party vendor names appear in module, entity, or enum names
+
+Every integration with an external system uses a `system` enum (or `channel` enum for messaging) + a `system_payload` (or `channel_payload`) jsonb. The vendor name appears **only as an enum value**, never as part of a module, table, column, or workflow name.
+
+| Domain | Module | Discriminator enum | Initial values |
+|---|---|---|---|
+| Communications | `messaging` (this slice) | `channel` | `email` / `sms` / `whatsapp` / `slack` / `voice` / `manual` / `photo` |
+| Point-of-sale | `pos` (Slice 4) | `system` | `toast` / `clover` / `square` / `lightspeed` / `shopify_pos` |
+| Accounting | `accounting` (Slice 3) | `system` | `qbo` / `xero` / `freshbooks` |
+| Bill pay | `billPayment` (Slice 3) | `system` | `melio` / `stripe` / `ach_direct` |
+| Banking | `bankingFeed` (later) | `system` | `plaid` / `mx` / `yodlee` |
+
+A new integration is added by: (1) extending the relevant enum, (2) writing a channel-/system-specific adapter for the worker that ingests or sends, (3) defining the jsonb payload shape inside that adapter. **No schema migration is required to add a new integration of an existing domain.**
+
+### 15.2 Adapters dispatch by enum value; the platform doesn't know about specific integrations
+
+The agent layer and Medusa workflows operate against the normalized fields (`address`, `body_plain`, `received_at`, etc.) and never branch on specific enum values. Channel-/system-specific behavior lives in adapters under `apps/procurement-agent/src/adapters/<system>/` (or equivalent for non-agent integrations). The Medusa side stays integration-agnostic.
+
+This means: when an `OutboundMessage` is sent, the workflow looks up its `ChannelAccount`, reads `channel`, and dispatches to the adapter registered for that channel. The workflow doesn't know whether it's sending email or SMS.
+
+### 15.3 Single-table for related-but-channel-varying entities
+
+For every domain where the same conceptual entity exists across multiple integrations (a "message" exists across email/SMS/WhatsApp; a "catalog item" exists across Toast/Clover/Square), use **one table with the discriminator enum + jsonb payload**, not one table per integration. Cross-integration queries ("all inbound messages from this vendor") then become single-table queries.
+
+The cost: jsonb payloads are loosely typed at the DB level. We accept this and enforce shape in TypeScript at adapter boundaries.
+
+### 15.4 LIM-specific naming is fine; vendor-platform-specific naming is not
+
+"LIM" appears in artifacts that are genuinely LIM-specific: PO number format (`LIM-YYYY-NNNN`), the procurement workflow rhythms, default unit conventions. "Lagos International Market" is the business; the platform models that business honestly. Vendor-platform names (Toast, QBO, Melio, Twilio, Notion, etc.) are not LIM-specific — they are choices that could change — and so they don't appear in the names of our own concepts.

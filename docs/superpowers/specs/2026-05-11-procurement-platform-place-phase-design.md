@@ -222,7 +222,7 @@ Each module follows the standard Medusa pattern: `src/modules/<name>/{models/, s
 
 **Entities:**
 
-- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, tone_reference_message_id (`model.text()`, nullable — opaque reference to a message in the messaging service; Medusa does not link it because the messaging service owns the data).
+- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, agent_authority (enum: `full_auto` / `draft_only` / `review_only`; default `draft_only` for new vendors — see §17.4), tone_reference_message_id (`model.text()`, nullable — opaque reference to a message in the messaging service; Medusa does not link it because the messaging service owns the data).
 - `VendorContact` — id, vendor_id (FK), name, role, email, phone.
 - `OrderingInstruction` — id, vendor_id (FK), instruction_text, cutoff_time (nullable), order_days (text[], nullable).
 
@@ -315,6 +315,8 @@ All workflows live in `apps/backend/src/workflows/`. Each is composed of steps f
 | `markPOConfirmedWorkflow` | Sets state → `confirmed` | Revert state |
 | `markPOCancelledWorkflow` | Sets state → `cancelled` (terminal). Emits cancellation event. | Revert state (only valid as compensation; cancellation is otherwise terminal) |
 | `softDeleteVendorWorkflow` | Soft-delete a Vendor. Fails if any non-terminal POs reference it. | Restore via `restoreVendors` |
+| `setVendorAgentAuthorityWorkflow` | Change a vendor's `agent_authority` (full_auto / draft_only / review_only). Emits a `procurementEvent` with source `human`. | Restore previous authority |
+| `setGlobalAgentPauseWorkflow` | Toggle a global pause flag the agent checks before any auto-fire. Body: `{ paused: boolean, paused_until?: timestamp }`. Stored as a single-row config table or in Redis. | Toggle off |
 
 ### 6.2 Workflow constraint reminders
 
@@ -406,6 +408,7 @@ Imported with rewrites:
 
 - Read-only tools split similarly: procurement reads via Medusa `query.graph` / `query.index`; message reads via messaging API (`GET /messages?vendor_id=...`).
 - A new subscriber in `apps/procurement-agent/src/subscribers/message-received.ts` consumes the Redis stream that messaging publishes to. When a procurement-relevant message arrives (classified as `order-request`, `vendor-confirmation`, `bill`, etc.), the subscriber triggers a Temporal workflow.
+- A second subscriber in `apps/procurement-agent/src/subscribers/medusa-event.ts` listens for Medusa state-change events (PO status transitions, line-item edits, vendor edits, etc.) and translates them into Temporal signals on active workflows. This is what lets the agent coexist with human edits (see §17.2 — coexistence over takeover): when Yemi marks a PO confirmed manually, the agent's waiting workflow sees the signal and exits cleanly.
 
 ### 8.2 Temporal workflow structure for this slice
 
@@ -416,11 +419,23 @@ purchaseOrderWorkflow (parent, long-running)
         ├── activity: vendor-match
         ├── activity: place-drafting (produces structured PO draft)
         ├── activity: outbound-classifier (validates outbound message)
-        ├── signal: human approval (waits, durable)
-        ├── activity: send-outbound-message (dispatches to channel adapter — email/SMS/WhatsApp/Slack)
-        ├── signal: vendor-confirmed | vendor-changed | timeout
-        └── final activity: mark-po-confirmed | mark-po-needs-review
+        ├── wait for signals:
+        │     • human_approved → send (if vendor.agent_authority allows)
+        │     • human_edited_po → re-evaluate (often: discard draft and exit)
+        │     • human_marked_sent → workflow exits; PO already sent by human
+        │     • timeout → escalate to Slack channel
+        ├── activity: send-outbound-message (only if all preconditions still hold;
+        │              re-reads PO state before send — diff-detect)
+        ├── wait for signals:
+        │     • vendor-confirmed → mark-po-confirmed
+        │     • vendor-changed → mark-po-needs-review
+        │     • human_marked_confirmed → workflow exits; human did it
+        │     • human_cancelled → workflow exits; respect human action
+        │     • timeout → notify in Slack, optionally chase
+        └── final activity: mark-po-confirmed | mark-po-needs-review | exit
 ```
+
+Note: every "wait for signals" stage includes a `human_*` variant. This is what makes the agent coexist with human edits cleanly — Yemi can always do the thing himself; the agent's workflow notices and adapts.
 
 Receive/Pay child workflows are stubs in this slice — they exist as no-op functions so the parent workflow compiles, but they're not exercised.
 
@@ -448,23 +463,24 @@ Three new admin sections in `apps/backend/src/admin/`, built with Medusa's admin
 
 ### 9.1 Vendors
 
-- **List page**: table with name, payment terms, order email, last PO date, open PO count. Filters by name (Index Module backed) and payment terms.
+- **List page**: table with name, payment terms, order email, last PO date, open PO count, `agent_authority` badge (full_auto / draft_only / review_only). Filters by name (Index Module backed), payment terms, and authority level.
 - **Detail page**: vendor profile with editable fields (workflows behind), tabs for:
   - **Items** — VendorItems they sell with last price + last ordered date
   - **POs** — list of POs filtered to this vendor
   - **Ordering Instructions** — editable list
   - **Tone Reference** — pinned email preview (read-only; set via separate workflow)
   - **Files** — vendor-level files (W-9, contract)
+  - **Agent authority** — control to switch `full_auto` / `draft_only` / `review_only`. Shows recent agent actions on this vendor as context.
 
 ### 9.2 Purchase Orders
 
-- **List page**: table with PO number, vendor, place_status, expected delivery, placeholder count, drafted_by_capability. Filters by status (composite — placeholder for future receive/pay states), vendor (Index Module), date range.
+- **List page**: table with PO number, vendor, place_status, expected delivery, placeholder count, authored-by badge (stealth avatar if drafted by agent, person name if drafted by human). Filters by status (composite — placeholder for future receive/pay states), vendor (Index Module), date range, author.
 - **Detail page**:
-  - Header: PO number, vendor, status badge, action buttons (Mark Sent / Mark Needs Review / Mark Confirmed / Cancel — disabled based on current state)
-  - **Line items table** with inline placeholder warnings (`[NEEDS PRICE]` shown in red)
-  - **Events timeline** — chronological list of events with source badges (human/agent/vendor/system); Langfuse deep-links for agent events
+  - Header: PO number, vendor, status badge, action buttons (Mark Sent / Mark Needs Review / Mark Confirmed / Cancel — disabled based on current state). **Yemi can hit any of these at any time; the agent's workflow notices and adapts.** No "Take over" button — see §17.2.
+  - **Line items table** with inline placeholder warnings (`[NEEDS PRICE]` shown in red). Editable inline — agent diff-detects on next decision point.
+  - **Events timeline** — chronological list of events with source badges (human / stealth / vendor / system); Langfuse deep-links for agent events
   - **Files** — attached files with preview
-  - **Linked emails** — outbound and inbound emails tied to this PO
+  - **Messages** tab — outbound and inbound messages tied to this PO, fetched from messaging service (§16)
 
 ### 9.3 Inbox (Medusa admin widget over messaging API)
 
@@ -521,13 +537,16 @@ These are intentionally left open here so the implementation plan can resolve th
 This slice is done when **all** of the following are true:
 
 1. A real inbound email from a vendor arrives in a watched inbox, is classified by the agent, and produces a PO draft visible in Medusa admin within 60 seconds.
-2. Yemi can review the PO in Medusa admin, resolve placeholders, click **Mark Sent**, and an outbound email is composed by the agent, reviewed, and sent.
+2. Yemi can review the PO in Medusa admin, resolve placeholders, and the agent (in `full_auto` mode) composes and sends an outbound email; in `draft_only` mode, the draft sits gated until Yemi approves.
 3. A vendor reply triggers `markPOConfirmedWorkflow` or `markPONeedsReviewWorkflow` automatically based on outbound-classifier comparing the response to the sent PO.
-4. The full event history of the PO is visible as a timeline with source attribution.
-5. The catalog seed script runs idempotently and populates ≥80% of historical vendors and items without manual cleanup.
-6. The procurement-agent and Medusa backend both deploy successfully and pass health checks in production.
-7. 9 ADRs from stealth are preserved under `docs/adr/`, plus a new ADR 0010 documenting the Medusa-as-data-layer decision.
-8. Build (`pnpm build` at root) passes with no type errors across all apps.
+4. The full event history of the PO is visible as a timeline with source attribution (human / stealth / vendor / system) and capability version on agent events.
+5. **Coexistence works**: Yemi marking a PO confirmed (or cancelling, or editing line items) at any time during the workflow's life is observed by the agent — the workflow either adapts or exits cleanly, never leaving orphan state.
+6. **Slack presence works**: agent state changes post to `#stealth` channel; `@stealth ...` mentions in Slack route through `slack-intent` and respond in-thread.
+7. **Authority levels work**: a vendor set to `draft_only` never gets an auto-sent message; a vendor set to `full_auto` does; `/stealth pause 30m` stops all auto-fires for that window.
+8. The catalog seed script runs idempotently and populates ≥80% of historical vendors and items without manual cleanup.
+9. The procurement-agent, messaging service, and Medusa backend all deploy successfully and pass health checks in production.
+10. 9 ADRs from stealth are preserved under `docs/adr/`, plus new ADR 0010 (Medusa-as-data-layer) and ADR 0011 (External-system-integrations-by-enum) added.
+11. Build (`pnpm build` at root) passes with no type errors across all apps.
 
 ## 14. References
 
@@ -569,6 +588,19 @@ The cost: jsonb payloads are loosely typed at the DB level. We accept this and e
 ### 15.4 LIM-specific naming is fine; vendor-platform-specific naming is not
 
 "LIM" appears in artifacts that are genuinely LIM-specific: PO number format (`LIM-YYYY-NNNN`), the procurement workflow rhythms, default unit conventions. "Lagos International Market" is the business; the platform models that business honestly. Vendor-platform names (Toast, QBO, Melio, Twilio, Notion, etc.) are not LIM-specific — they are choices that could change — and so they don't appear in the names of our own concepts.
+
+### 15.5 Agent and human coexist; the agent reads state, never claims it
+
+The platform does not implement take-over or pause-on-conflict mechanisms. Humans can always edit any entity at any time, regardless of what the agent is doing. The agent's workflows are responsible for reading current state at each decision point and adapting — not for blocking, locking, or asking permission.
+
+This means:
+- No "Take over" buttons in any UI.
+- No agent-vs-human conflict resolution dialogs.
+- Every Temporal activity re-queries Medusa state before committing.
+- Every state-change workflow is idempotent (so two callers racing the same end-state both succeed; the second is a no-op).
+- A Medusa-event-to-Temporal-signal subscriber lets the agent's long-running workflows notice human edits and adapt.
+
+This principle applies to **every** future agent capability in this platform, not just the Place-phase ones in Slice 1.
 
 ## 16. Messaging service (`apps/messaging/`)
 
@@ -620,11 +652,12 @@ Initial adapters in Slice 1:
 
 | Channel | Ingestion | Send | Notes |
 |---|---|---|---|
-| `email` | IMAP poll (Gmail OAuth where available, fallback to IMAP password) | SMTP / Gmail API | The primary channel for v0 — Yemi's mailbox, Grace's mailbox, shared `procurement@` archive |
+| `email` | IMAP poll (Gmail OAuth where available, fallback to IMAP password) | SMTP / Gmail API | The primary vendor channel for v0 — Yemi's mailbox, Grace's mailbox, shared `procurement@` archive |
+| `slack` | Slack Events API (webhook) | Slack Web API (chat.postMessage) | **Primary human-agent interface** (§17.3). One Slack channel for agent presence/notifications; `@stealth ...` mentions trigger capabilities via the existing `slack-intent` capability |
 | `manual` | API only (no ingestion adapter — form posts) | n/a | "Yemi typed: vendor confirmed verbally" — covers the gap where there's no native channel |
 | `photo` | API only (file upload) | n/a | Dock photos, paper invoices captured by phone |
 
-Deferred to Slice 2+: `sms` (Twilio), `whatsapp` (Meta Cloud API), `slack` (Events API), `voice` (transcript ingestion). The schema accommodates them today; the adapters get implemented when the workflows need them.
+Deferred to Slice 2+: `sms` (Twilio), `whatsapp` (Meta Cloud API), `voice` (transcript ingestion). The schema accommodates them today; the adapters get implemented when the workflows need them.
 
 ### 16.4 HTTP API
 
@@ -689,3 +722,84 @@ In addition to the slice-wide criteria in §13, the messaging service is done wh
 3. An outbound draft created via `POST /v1/outbound` can be approved and sent via the email adapter, with `sent_at` and `external_message_id` populated.
 4. The Medusa admin inbox widget renders inbound messages with channel badges and is filterable by vendor.
 5. The service deploys as a distinct process; restart loses no in-flight messages (writes are durable; channel adapter retries pick up where they left off).
+
+## 17. Agent UX as coworker
+
+The agent is a coworker, not a tool. It should be **felt, not heard** — present and active, but not constantly interrupting. The operator can ignore it, work alongside it, or address it directly. None of these modes requires a special UI affordance; they emerge from the agent's behavior and the surfaces it operates through.
+
+### 17.1 Identity: `stealth`
+
+The agent has a name: **`stealth`**. The name appears wherever the agent's work shows up:
+
+- **Admin event timelines** — events with `source: 'agent'` render with a `stealth` avatar (consistent small image) and color badge (proposed: a muted teal — distinct from human-source events without being loud).
+- **Drafted-by attribution** — POs, outbound messages, classifications drafted by the agent show "stealth · 0.1.2" (capability version) rather than a person name.
+- **Slack** — the agent posts as a Slack user named `stealth` with the same avatar.
+
+The agent's "version" surfaces in attribution (`stealth · place-drafting@0.1.2`) so when a draft looks wrong, Yemi knows which capability version produced it.
+
+### 17.2 Coexistence over takeover (no take-over button)
+
+**The human can always just go do the thing.** There is no "Take over" button, no "Pause agent on this PO," no human-vs-agent conflict resolution UI. The agent's workflows are designed to **read current state at every decision point and adapt** — so when Yemi marks a PO confirmed himself, the agent's workflow that was waiting for vendor confirmation sees the state change (via the Medusa-event-to-Temporal-signal subscriber, §8.1) and exits cleanly.
+
+Architectural requirements that make this safe:
+
+- **Pessimistic state reads in every activity.** Before any commit, the activity re-queries Medusa state. No "I drafted X 30 minutes ago, so X is still true." If Yemi edited line items in between, the activity sees the edits.
+- **Diff-detect at write time.** Before sending an outbound message drafted earlier, the activity checks whether the underlying PO changed since drafting. If yes, the default is to **discard the draft** (Yemi has moved the conversation forward; resend would be noise). Configurable per capability — some may prefer regenerate.
+- **Idempotent state transitions.** `markPOConfirmedWorkflow` on an already-confirmed PO is a no-op. The same is true for every workflow. Two callers (agent and human) racing to the same end-state both succeed; the second is a no-op.
+- **Medusa events become Temporal signals.** The `apps/procurement-agent/src/subscribers/medusa-event.ts` subscriber listens for `purchase_order.status.changed`, `purchase_order.line_item.updated`, `outbound_message.sent` (cross-system, from the messaging service), etc., and dispatches signals to the right active workflow.
+
+The result: Yemi clicks Mark Confirmed → Medusa workflow commits → event fires → subscriber signals the agent's Place workflow → workflow exits its wait-for-confirmation step → workflow exits cleanly with a `procurementEvent` noting "Place phase ended because human marked confirmed manually."
+
+### 17.3 Slack as the conversation surface (no in-admin chat)
+
+The agent does not have a chat input in Medusa admin. The conversation surface is **Slack**, where the team already lives. Two patterns:
+
+**Agent posts updates to a presence channel.** A dedicated Slack channel (proposed: `#stealth`) receives messages from the agent for visible-but-quiet presence:
+
+- "Drafted PO-2026-0142 for Yusol Foods · review: <admin-link>" (when draft_only or review_only vendor)
+- "Sent PO-2026-0142 to Yusol Foods · awaiting confirmation" (when full_auto)
+- "Marked PO-2026-0138 confirmed (vendor reply matched)"
+- "Couldn't match 'Adesui Corp' to a known vendor — needs your eye: <admin-link>"
+
+Operators can mute the channel during heads-down work; the agent's events are durably available in admin regardless. The channel is the activity log, not a notification spam vector.
+
+**Operators tag the agent to trigger capabilities.** `@stealth ...` in any Slack channel the agent is in routes through the existing `slack-intent` capability:
+
+- `@stealth draft a chase email for PO-2026-0142` → triggers a `chase-draft` capability (in Slice 2 when that capability is wired; in Slice 1 the slack-intent capability handles a smaller set: "summarize", "what's the status of <PO>", "recheck the vendor match on this thread")
+- The agent responds in-thread with what it did, with admin links
+
+This means Slack adapter (§16.3) is **Slice 1 mandatory**, not deferred.
+
+### 17.4 Authority levels (per-vendor + global pause)
+
+Authority is a configuration, not a take-over mechanism. Per-vendor:
+
+| `agent_authority` | What the agent is allowed to do |
+|---|---|
+| `full_auto` | Auto-fire all events including outbound sends. Default downstream gates still apply (e.g., zero-placeholders required to mark sent). |
+| `draft_only` *(default for new vendors)* | Agent drafts everything, never sends or marks state without explicit human approval. |
+| `review_only` | Agent observes and classifies but doesn't draft. Useful for unfamiliar vendors during trust building. |
+
+Global pause is a single toggle (admin header control + Slack slash command `/stealth pause 30m`): when active, the agent **does not auto-fire** any state change, but continues to observe and queue suggestions. Useful for "I'm in a meeting, don't act without me for the next 30 min."
+
+### 17.5 Notes for the agent (deferred to Slice 2)
+
+A free-text "notes for stealth" field on Vendor and PO entities. The agent pulls these into capability context as part of its read-only tools. Example: `"Yusol always wants Tuesday delivery — never schedule Mon/Wed"`. Cheap to add but only useful once a few vendors exist; defer to Slice 2.
+
+### 17.6 Implementation summary
+
+What Slice 1 actually has to build:
+
+| Item | Files / location |
+|---|---|
+| Visual identity in admin | `apps/backend/src/admin/components/stealth-avatar.tsx`, source-badge renderer used across event timelines |
+| Author attribution | `procurementEvent.source_detail` already covers this; admin renders it |
+| `vendor.agent_authority` enum + workflow + UI control | §5.1 + §6.1 + §9.1 |
+| Global pause flag (Redis key + workflow + admin header control) | `setGlobalAgentPauseWorkflow` + small admin component |
+| Medusa-event-to-Temporal-signal subscriber | `apps/procurement-agent/src/subscribers/medusa-event.ts` |
+| Diff-detect in activities before commit | inside each activity in `apps/procurement-agent/src/activities/` |
+| Slack adapter (ingestion + send) in messaging service | `apps/messaging/src/adapters/slack/` |
+| `#stealth` channel posts on agent state changes | new activity that POSTs to messaging `/v1/outbound` with `channel: 'slack'` |
+| `@stealth` mention routing via `slack-intent` capability | already in stealth's agent code; needs wiring to the new client setup |
+
+What it explicitly does **not** build: take-over button, in-admin chat, in-admin activity feed, notes-for-agent fields (Slice 2), confirmation gates on individual capability actions beyond what `gate_status` already provides.

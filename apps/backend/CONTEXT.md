@@ -12,6 +12,24 @@ When this document and code disagree, fix the code.
 
 ## Core records
 
+### Product / ProductVariant / ProductCategory / ProductTag (Medusa built-in)
+
+LIM's canonical items live as Medusa **`Product`** records. A given product ("Seboye Yam Flour 8 lbs") may have multiple **`ProductVariant`** records representing pack-size variants ("case of 12", "single unit") via the **`ProductOption`** `pack-format`. Brand is a **`ProductTag`** ("Seboye Foods", "Yusol", "Peak"). The locked LIM taxonomy (3 menus / 6 groups / ~63 subgroups) is a hierarchical **`ProductCategory`** tree, seeded once.
+
+Native fields used: `Product.title / description / handle / origin_country / hs_code / weight / length / height / width / material`; `ProductVariant.sku / barcode / ean / upc`; `Image` (one-to-many on Product).
+
+_Avoid_: parallel-modeling an "Item" entity. LIM concepts map onto Medusa primitives.
+
+### ProductProcurementAttributes (custom; 1:1 extension of Product)
+
+Procurement-specific attributes Medusa Product doesn't natively model: `storage_type` (`ambient` / `refrigerated` / `frozen`), `is_perishable`, `default_buy_unit` (e.g. `case`, `pallet` — overrides variant unit for procurement context), `notes_for_agent` (agent context distinct from public description).
+
+### VendorItem (custom)
+
+The per-(vendor, variant) join. Holds vendor-side identifiers (`vendor_sku`, `vendor_description`), cost-price history (`last_unit_price`, `last_ordered_at`, `currency`), and agent defaults (`default_order_qty`, `lead_time_days`, `min_order_qty`). Linked to Vendor (custom) and ProductVariant (Medusa built-in).
+
+Medusa's `Pricing` module handles SELL prices (per-customer-group, per-currency, per-region). VendorItem holds vendor COST prices — orthogonal concern.
+
 ### Vendor
 
 A supplier of goods to LIM. Has payment terms, a primary order contact, and an accounting contact. Vendors carry their own status, rating, ordering rhythm, freight defaults, and an `agent_authority` setting that bounds what stealth is allowed to commit on their behalf.

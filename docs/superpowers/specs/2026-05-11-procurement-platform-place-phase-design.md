@@ -218,24 +218,49 @@ b2b-starter/ (turborepo root, current name kept for now)
 
 Each module follows the standard Medusa pattern: `src/modules/<name>/{models/, service.ts, index.ts, migrations/}`. Module names are camelCase per Medusa convention.
 
-### 5.1 `vendor`
+### 5.1 `vendor` (custom)
+
+Custom module — Medusa has no built-in vendor/supplier concept (`Customer` is for end-customers, not suppliers). See `apps/backend/CONTEXT.md` for the canonical vocabulary; this section is the schema-of-record.
 
 **Entities:**
 
-- `Vendor` — id (uuid), name (unique), legal_name (nullable), payment_terms (enum: `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum: `invoice_date` / `ship_date`), primary_order_email, ap_email (nullable), notes, agent_authority (enum: `full_auto` / `draft_only` / `review_only`; default `draft_only` for new vendors — see §17.4), tone_reference_message_id (`model.text()`, nullable — opaque reference to a message in the messaging service; Medusa does not link it because the messaging service owns the data).
-- `VendorContact` — id, vendor_id (FK), name, role, email, phone.
-- `OrderingInstruction` — id, vendor_id (FK), instruction_text, cutoff_time (nullable), order_days (text[], nullable).
+- `Vendor` — id, name (unique), legal_name (nullable), tax_id (encrypted, nullable — for 1099 reporting), account_number_at_vendor (nullable — your customer-ID on their end), website_url (nullable), status (enum `active` / `inactive` / `on_hold`, default `active`), rating (int 1-5, nullable), agent_authority (enum `full_auto` / `draft_only` / `review_only`, default `draft_only` — see §17.4), address_street, address_city, address_state, address_postal, address_country, main_contact_name, main_contact_email, main_contact_phone (nullable), ap_contact_name (nullable), ap_email (nullable), ap_phone (nullable), statement_email_or_url (nullable), order_day (nullable), cut_off_time (nullable), frequency (enum `as_needed` / `weekly` / `biweekly` / `monthly`, default `as_needed`), follow_up_level (enum `low` / `medium` / `high`, default `medium`), default_lead_time_days (nullable), order_minimum_text (nullable), ordering_instructions (nullable), vendor_sends_truck (bool, default false), we_arrange_freight (bool, default false), freight_fee (numeric, default 0), pallet_fee (numeric, default 0), payment_terms (enum `net_10` / `net_15` / `net_30` / `net_45` / `net_60` / `prepay` / `cod`), net_starts_from (enum `invoice_date` / `ship_date`), preferred_payment_method (enum `check` / `ach` / `wire` / `card` / `other`, nullable), currency (text, default `USD`, references Medusa Currency module's `currency_code`), tone_reference_message_id (text, nullable — opaque ref to messaging service), notes (nullable).
+- `VendorContact` — id, vendor_id (FK same module), name, role (text — e.g. "warehouse manager"), email (nullable), phone (nullable). For additional contacts beyond the denormalized main + AP on Vendor.
+- `VendorTag` — id, vendor_id (FK same module), tag (text — e.g. "dry-goods", "frozen", "produce"). Indexed on `tag` for filtering.
 
-**Service:** auto-generated CRUD via `MedusaService({ Vendor, VendorContact, OrderingInstruction })`.
+**Service:** auto-generated CRUD via `MedusaService({ Vendor, VendorContact, VendorTag })`.
 
-### 5.2 `item`
+**Deferred (reserved names):** `VendorPaymentMethod` for Pay-phase banking info; `VendorAddress` if multi-address ever needed.
 
-**Entities:**
+### 5.2 Canonical items — use Medusa Product, plus two thin custom modules
 
-- `Item` — id, canonical_name, description (nullable), default_unit (e.g., "case", "lb", "ea"), category (nullable string; refined when catalog-health module exists), is_active.
-- `VendorItem` — id, item_id (FK, same module), vendor_id (`model.text()` — Medusa modules cannot hold cross-module DB-level FKs; the link in §5.7 carries the relationship), vendor_sku, vendor_description, last_unit_price (numeric), last_ordered_date (date, nullable), default_order_qty (int, nullable), lead_time_days (int, nullable).
+The "canonical item" concept (e.g. "Seboye Yam Flour 8 lbs") lives as a built-in Medusa **`Product`**, with pack-size variants modeled as **`ProductVariant`** via **`ProductOption`** (e.g. option `pack-format` with values `unit` / `case-12`). Brand is a **`ProductTag`**. The locked LIM taxonomy (3 menus / 6 groups / 63 subgroups) is a hierarchical **`ProductCategory`** tree, seeded once. Images use Medusa's built-in **`Image`**. Variant SKU / barcode / EAN / UPC, country of origin, HS code, weight, dimensions, and material all use the native Product / Variant fields.
 
-**Service:** standard `MedusaService({ Item, VendorItem })`.
+Two thin custom modules extend this for procurement-specific concerns.
+
+#### 5.2.a `productProcurement` (custom — 1:1 extension of Product)
+
+For attributes Medusa Product doesn't natively support.
+
+**Entity:**
+
+- `ProductProcurementAttributes` — id, product_id (text, opaque ref + link to Medusa Product), storage_type (enum `ambient` / `refrigerated` / `frozen`, default `ambient`), is_perishable (bool, default false), default_buy_unit (text, nullable — e.g. `case`, `pallet`; overrides variant unit for procurement context), notes_for_agent (text, nullable — agent-only context, distinct from public `Product.description`).
+
+**Link:** `product ↔ productProcurementAttributes` (1:1, `deleteCascade: true` on product delete).
+
+#### 5.2.b `vendorItem` (custom)
+
+Per-(vendor, variant) knowledge: vendor SKU, cost-price history, lead time, MOQ. Medusa's `Pricing` module handles SELL prices, not vendor COST prices.
+
+**Entity:**
+
+- `VendorItem` — id, vendor_id (text, opaque ref + link to vendor module), variant_id (text, opaque ref + link to Medusa ProductVariant), vendor_sku (nullable), vendor_description (nullable), last_unit_price (numeric, nullable), last_ordered_at (timestamp, nullable), currency (text, nullable — null inherits `Vendor.currency`), default_order_qty (numeric, nullable), lead_time_days (int, nullable — overrides `Vendor.default_lead_time_days`), min_order_qty (numeric, nullable — vendor's MOQ for THIS variant), is_active (bool, default true), notes (nullable).
+
+**Indexes:** unique `(vendor_id, variant_id)`; unique `(vendor_id, vendor_sku)` when vendor_sku is not null.
+
+**Links:**
+- `vendor ↔ vendorItem` (one-to-many; `filterable: ["id", "name"]` on vendor)
+- `product.productVariant ↔ vendorItem` (one-to-many; `filterable: ["id", "sku", "title"]` on variant)
 
 ### 5.3 `purchaseOrder`
 
@@ -276,12 +301,13 @@ Every link is its own file in `apps/backend/src/links/`. All links include `filt
 | Link file | Modules | Notes |
 |---|---|---|
 | `vendor-purchase-order.ts` | `vendor` ↔ `purchaseOrder` | One vendor → many POs. `filterable: ["id", "name"]` on vendor side. |
-| `vendor-vendor-item.ts` | `vendor` ↔ `item.VendorItem` | The `VendorItem` model lives in `item` module and holds per-(vendor, item) data (sku, last price, lead time). This link binds each VendorItem to its Vendor. `filterable: ["id", "name"]` on vendor side so the UI can filter VendorItems by vendor name. |
-| `item-vendor-item.ts` | `item` ↔ `item.VendorItem` | Same-module relation; expressed as a normal Mikro relationship via `item_id`, not via `defineLink`. Listed here for completeness — not a separate link file. |
+| `vendor-vendor-item.ts` | `vendor` ↔ `vendorItem.VendorItem` | One vendor → many VendorItems. `filterable: ["id", "name"]` on vendor. |
+| `product-vendor-item.ts` | Medusa `product.ProductVariant` ↔ `vendorItem.VendorItem` | One variant → many VendorItems (one per vendor that carries it). `filterable: ["id", "sku", "title"]` on variant. |
+| `product-procurement-attributes.ts` | Medusa `product.Product` ↔ `productProcurement.ProductProcurementAttributes` | 1:1 with deleteCascade on product delete. `filterable: ["storage_type", "is_perishable"]` on the attributes side for catalog-health queries. |
 | `purchase-order-event.ts` | `purchaseOrder` ↔ `procurementEvent` | One-to-many; `filterable: ["id", "event_type", "phase"]` on event side for timeline queries. |
 | `purchase-order-file.ts` | `purchaseOrder` ↔ `procurementFile` | One-to-many; `filterable: ["id", "file_type"]`. |
+| `product-variant-po-line.ts` | Medusa `product.ProductVariant` ↔ `purchaseOrder.POLineItem` | One variant → many POLineItems across POs. `filterable: ["id", "sku"]` on variant. Free-text lines (variant_id null) have no link. |
 | *(no messaging links)* | — | Messages live in the messaging service (§16). Medusa stores opaque message IDs on `vendor.tone_reference_message_id`, `outboundMessageRef.purchase_order_id`, and `procurementEvent.payload.message_id`. Cross-system joins happen in the agent or in admin widgets that call both APIs. |
-| `item-line-item.ts` | `item` ↔ `purchaseOrder.POLineItem` | Lines that match a canonical item. Free-text lines have no link. |
 
 Index Module setup is a one-time foundation step at the start of implementation:
 
@@ -498,10 +524,13 @@ The inbox UI lives inside Medusa admin (operators have one place to be) but does
 Stealth's `scripts/seed-catalog.ts` is rewritten as `apps/backend/scripts/seed-procurement.ts` (or as a Medusa scheduled job for first-run-only). The data source is the **Notion PO database** — the only system with operational history. The script:
 
 1. Reads historical PO data from a Notion DB export (CSV or via Notion API).
-2. Calls `createVendorWorkflow` for each unique vendor (idempotent on name).
-3. Calls `createItemWorkflow` for each unique canonical item.
-4. Calls `createVendorItemWorkflow` to wire vendor ↔ item with historical last-price / last-ordered data.
-5. Logs per-record success/failure; idempotent on re-run.
+2. Calls Medusa's built-in **`createProductCategoriesWorkflow`** once to seed the locked LIM taxonomy as a hierarchical category tree (3 menus → 6 groups → ~63 subgroups for Retail).
+3. Calls Medusa's built-in **`createProductTagsWorkflow`** for each unique brand.
+4. Calls Medusa's built-in **`createProductWorkflow`** for each unique canonical item (auto-creates the default `ProductVariant` per item; multi-pack items use `ProductOption` `pack-format` with values).
+5. Calls custom **`createProductProcurementAttributesWorkflow`** to set storage_type / is_perishable / default_buy_unit / notes_for_agent on each Product.
+6. Calls custom **`createVendorWorkflow`** for each unique vendor (idempotent on name; defaults `agent_authority: draft_only` per §17.4).
+7. Calls custom **`createVendorItemWorkflow`** for each vendor ↔ variant pair, populating historical last-price / last-ordered-at.
+8. Logs per-record success/failure; idempotent on re-run.
 
 Stealth has its own `seed-catalog.ts` against a Supabase database, but stealth was never operationally loaded with real data — its database is empty or holds only test fixtures. The Notion export is the only ground truth.
 
@@ -588,6 +617,37 @@ The cost: jsonb payloads are loosely typed at the DB level. We accept this and e
 ### 15.4 LIM-specific naming is fine; vendor-platform-specific naming is not
 
 "LIM" appears in artifacts that are genuinely LIM-specific: PO number format (`LIM-YYYY-NNNN`), the procurement workflow rhythms, default unit conventions. "Lagos International Market" is the business; the platform models that business honestly. Vendor-platform names (Toast, QBO, Melio, Twilio, Notion, etc.) are not LIM-specific — they are choices that could change — and so they don't appear in the names of our own concepts.
+
+### 15.6 Lean on Medusa primitives; custom modules only where the platform has no native concept
+
+Before designing any custom module, audit whether Medusa's built-ins already cover the need. Custom modules add data-modeling cost, admin-UI cost, and maintenance cost; using a built-in inherits those for free.
+
+Audit table for Slice 1's domain:
+
+| LIM concept | Built-in or custom? |
+|---|---|
+| Canonical item / catalog entry | **Medusa `Product`** |
+| Pack-size variant | **Medusa `ProductVariant`** via `ProductOption` |
+| Brand / classification tags | **Medusa `ProductTag`** |
+| LIM taxonomy hierarchy | **Medusa `ProductCategory`** (seeded once) |
+| SKU, barcode, EAN, UPC | **Medusa `ProductVariant`** native fields |
+| Item images | **Medusa `Image`** (one-to-many on Product) |
+| Country of origin, HS code, weight, dimensions, material | **Medusa `Product` / `ProductVariant`** native fields |
+| Currency | **Medusa `Currency` module** (`Vendor.currency` references its `currency_code`) |
+| File storage backend | **Medusa `File` module** (provider-based; Supabase Storage adapter to be written) |
+| Vendor / supplier | **Custom `vendor`** — Medusa has no analog (Customer is for end-customers) |
+| Procurement-specific item attrs | **Custom `productProcurement`** (1:1 extension of Product) |
+| Per-vendor cost prices & SKUs | **Custom `vendorItem`** (Medusa Pricing is for SELL prices) |
+| Purchase order (buy-side) | **Custom `purchaseOrder`** — Medusa Order is sales-side |
+| Audit log / event history | **Custom `procurementEvent`** — Medusa Event Bus is pub/sub, not persisted history |
+| File metadata (sha256, file_type, links) | **Custom `procurementFile`** (uses Medusa File module for actual storage) |
+| Inventory / stock locations | **Medusa `Inventory` + `Stock Location`** — deferred to Slice 2 (Receive phase) |
+| Customer-group / wholesale pricing rules | **Medusa `Pricing` module** — deferred to Slice 5+ (Wholesale storefront) |
+| Sales channels | **Medusa `Sales Channel`** — deferred to Slice 5+ |
+| Tax handling | **Medusa `Tax` module** — deferred to Slice 4 (Catalog Health) |
+| Regions / geographies | **Medusa `Region`** — deferred to Slice 5+ |
+
+Rule of thumb: if Medusa has a module for the concept, **extend it via module links + thin custom modules**, don't parallel-model. The exception is when the semantic doesn't fit (e.g., Order is sales-side; retrofitting it for buy-side POs would be confusing — custom PO module wins).
 
 ### 15.5 Agent and human coexist; the agent reads state, never claims it
 

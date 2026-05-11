@@ -25,7 +25,7 @@ const RemoveEmployeePrompt = ({ employee }: { employee: QueryEmployee }) => {
   const handleRemove = async () => {
     setIsRemoving(true)
     await deleteEmployee(employee.company_id, employee.id).catch(() => {
-      toast.error("Error deleting employee")
+      toast.error("Error deleting user")
     })
     setIsRemoving(false)
 
@@ -43,7 +43,7 @@ const RemoveEmployeePrompt = ({ employee }: { employee: QueryEmployee }) => {
           <Prompt.Description>
             Are you sure you want to remove{" "}
             <strong>{employee.customer.email}</strong> from your team? They will
-            no longer be able to purchase on behalf of your company.
+            no longer be able to purchase on behalf of your department.
           </Prompt.Description>
         </Prompt.Header>
         <Prompt.Footer>
@@ -92,7 +92,7 @@ const Employee = ({
 
     setIsSaving(true)
     await updateEmployee(updateData as StoreUpdateEmployee).catch(() => {
-      toast.error("Error updating employee")
+      toast.error("Error updating user")
     })
 
     setIsSaving(false)
@@ -183,7 +183,7 @@ const Employee = ({
         }}
       >
         <div className="flex flex-col gap-y-2">
-          <Text className=" text-neutral-950 font-medium">Spending Limit</Text>
+          <Text className=" text-neutral-950 font-medium">Quantity Limit</Text>
           <CurrencyInput
             symbol={currencySymbolMap[company.currency_code!]}
             code={company.currency_code!}

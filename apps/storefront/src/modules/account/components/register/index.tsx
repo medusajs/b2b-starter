@@ -109,7 +109,7 @@ const Register = ({ setCurrentView, regions }: Props) => {
       <Text className="text-4xl text-neutral-950 text-left mb-4">
         Create your
         <br />
-        company account.
+        department account.
       </Text>
       <form className="w-full flex flex-col" action={formAction}>
         <div className="flex flex-col w-full gap-y-4">

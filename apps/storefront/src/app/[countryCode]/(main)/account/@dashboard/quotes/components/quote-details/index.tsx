@@ -180,7 +180,7 @@ const QuoteDetails: React.FC<QuoteDetailsProps> = ({
               </div>
 
               <div className="flex justify-between">
-                <Text>Spend Limit</Text>
+                <Text>Qty Limit</Text>
                 <Text>
                   {(quote.customer?.employee?.spending_limit &&
                     formatAmount(

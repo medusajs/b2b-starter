@@ -204,7 +204,7 @@ const CartDrawer = ({
                         <LockClosedSolidMini />
                         {customer
                           ? spendLimitExceeded
-                            ? "Spending Limit Exceeded"
+                            ? "Quantity Limit Exceeded"
                             : "Secure Checkout"
                           : "Log in to checkout"}
                       </Button>

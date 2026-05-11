@@ -62,7 +62,7 @@ const Summary = ({ customer, spendLimitExceeded }: SummaryProps) => {
         >
           {customer
             ? spendLimitExceeded
-              ? "Spending Limit Exceeded"
+              ? "Quantity Limit Exceeded"
               : "Checkout"
             : "Log in to Checkout"}
         </Button>

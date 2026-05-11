@@ -1,0 +1,14 @@
+[phases.build]
+cmds = [
+  "pnpm install --frozen-lockfile",
+  "pnpm --filter @b2b-starter/backend build",
+]
+
+[deploy]
+startCmd = "cd apps/backend && pnpm medusa db:migrate && pnpm start"
+
+[[fileOutputs]]
+# Preserve the Medusa build artefacts (.medusa/server and .medusa/admin)
+# produced by `medusa build` so they are available at runtime.
+src = "apps/backend/.medusa"
+dest = "apps/backend/.medusa"

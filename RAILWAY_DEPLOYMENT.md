@@ -53,15 +53,17 @@ Click on the backend service tile (the one connected to GitHub).
 
 | Field | Value |
 |---|---|
-| Builder | **Nixpacks** *(default)* |
-| Build Command | `pnpm install --frozen-lockfile && pnpm --filter @b2b-starter/backend build` |
-| Pre-deploy Command | `cd apps/backend && pnpm medusa db:migrate` |
+| Builder | **Railpack** |
+| Build Command | *(leave blank — defined in `railpack.toml`)* |
+| Pre-deploy Command | *(leave blank — `db:migrate` is included in the start command)* |
+
+> **Note:** A `railpack.toml` at the repo root defines the build steps and preserves the `.medusa` build artefacts (admin bundle + compiled server) in the final image. Without this, Medusa crashes on startup with "Could not find index.html in the admin build directory".
 
 ### 3c. Settings → Deploy
 
 | Field | Value |
 |---|---|
-| Start Command | `cd apps/backend && pnpm start` |
+| Start Command | *(leave blank — defined in `railpack.toml` as `cd apps/backend && pnpm medusa db:migrate && pnpm start`)* |
 | Healthcheck Path | `/health` *(optional)* |
 | Restart Policy | `On Failure` |
 
@@ -155,7 +157,8 @@ Once the Netlify storefront is deployed and you have its URL (e.g. `https://pg-b
 
 | Symptom | Fix |
 |---|---|
-| Build fails with "pnpm: command not found" | Confirm Builder is Nixpacks (it auto-detects pnpm from the lockfile). If it persists, set `NIXPACKS_PKGS=pnpm` in Variables. |
+| Build fails with "pnpm: command not found" | Confirm Builder is set to **Railpack**. Railpack auto-detects pnpm from the lockfile and the `railpack.toml` build phase. |
+| Startup crash: "Could not find index.html in the admin build directory" | The `.medusa` build artefacts are missing from the image. Ensure `railpack.toml` is present at the repo root and the `[[fileOutputs]]` block is intact. |
 | Migration fails with "database does not exist" | The Postgres service hasn't finished provisioning. Wait 30s and redeploy. |
 | `pnpm medusa user` says command not found in shell | You're in the wrong directory. `cd apps/backend` first. |
 | Admin dashboard at `/app` returns 404 | Confirm `DISABLE_MEDUSA_ADMIN=false` and rebuild. |

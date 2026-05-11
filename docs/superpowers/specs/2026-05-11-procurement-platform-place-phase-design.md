@@ -8,20 +8,20 @@
 
 ## 0. Context
 
-Lagos International Market currently operates its commerce and procurement workflows across three Notion-modeled surfaces and three partially-built code projects:
+Lagos International Market currently runs its commerce and procurement workflows in **Notion**. Notion is the only operational system today. Three code projects exist in parallel as in-development attempts at a future platform — none is in Yemi's daily use:
 
-- **Notion Operations Home** — vendor profiles, PO database, invoice tracker, recurring obligations, reconciliation log, financial exceptions; QBO bills/payments mirrored read-only.
-- **`b2b-starter`** — a Medusa.js v2 monorepo with the official B2B starter (Company / Quote / Approval modules) plus a Next.js storefront. Foundation for everything below.
-- **`catalog-health-worker`** — a deployed Vercel Workflow DevKit service that runs a daily AI scan over the Toast POS catalog (~1,840 items) and writes findings to Notion.
-- **`stealth`** — a recent (5 commits, May 2026) Temporal-driven procurement platform with a complete domain model: 14 tables, 17 enums, three-phase Place/Receive/Pay state machines, and 11 AI agent capabilities.
+- **Notion Operations Home** *(operational, daily use)* — vendor profiles, PO database, invoice tracker, recurring obligations, reconciliation log, financial exceptions; QBO bills/payments mirrored read-only. This is the platform's current production state.
+- **`b2b-starter`** *(in development)* — a Medusa.js v2 monorepo with the official B2B starter (Company / Quote / Approval modules) plus a Next.js storefront. The intended platform foundation; not yet hosting any LIM workflows.
+- **`catalog-health-worker`** *(in development)* — a Vercel Workflow DevKit service that runs a daily AI scan over the Toast POS catalog (~1,840 items) and writes findings to Notion. Functionally complete and runnable, but not yet adopted as the source of truth for catalog issues.
+- **`stealth`** *(in development)* — a recent (5 commits, May 2026) Temporal-driven procurement platform with a complete domain model: 14 tables, 17 enums, three-phase Place/Receive/Pay state machines, and 11 AI agent capabilities. Design-mature; no operational data has flowed through it.
 
-The directive is to consolidate these into one platform using **Medusa primitives for data + transactional commits**, with stealth's agent layer as the orchestration brain. This spec covers the **first slice** of that consolidation: migrating stealth's **Place phase** into Medusa end-to-end, including the schema, workflows, agent integration, and admin UI for everything required to draft, send, and confirm a Purchase Order.
+The directive is to consolidate the three in-development projects into one platform using **Medusa primitives for data + transactional commits**, with stealth's agent layer as the orchestration brain — then cut Notion over to it once it can replace the operational workflows. This spec covers the **first slice** of that consolidation: migrating stealth's **Place phase** design into Medusa end-to-end, including the schema, workflows, agent integration, and admin UI for everything required to draft, send, and confirm a Purchase Order.
 
 Receive, Pay, QBO sync, catalog-health integration, and storefront work are explicit follow-on slices, not in scope here.
 
 ## 1. Goals
 
-1. **Medusa is the single source of truth** for procurement data — vendors, items, purchase orders, line items, events, files, inbox emails. No write-through to a parallel Drizzle/Supabase database survives this slice.
+1. **Medusa is the single source of truth** for procurement data — vendors, items, purchase orders, line items, events, files, inbound/outbound messages. The agent never writes directly to any other database; stealth's Drizzle/Supabase schema is not carried into the merged platform (its design is, via Medusa modules).
 2. **Stealth's Temporal agent layer** is preserved as a peer service that calls into Medusa for all state changes. Its 9 ADRs, its capability prompts/schemas/tools, and its three-phase FSM design carry over.
 3. **An end-to-end vertical works**: an inbound email arrives → the inbound-classifier capability identifies it → the place-drafting capability drafts a PO → the PO appears in Medusa admin in Draft state → a human reviews and approves → mark-PO-sent runs → an outbound email goes to the vendor → vendor confirms → mark-PO-confirmed runs. Every transition is durable, observable in Langfuse, and recorded as a Medusa `procurementEvent`.
 4. **The catalog ETL** (stealth Issue 02) is re-runnable against the Medusa schema, seeding `item` and `vendorItem` from historical POs.
@@ -435,23 +435,25 @@ The UI keeps the "Inbox" metaphor because it's intuitive for the operator — it
 
 ## 10. Data migration
 
-### 10.1 Catalog ETL (stealth Issue 02 re-run)
+### 10.1 Catalog seed (stealth Issue 02 re-run)
 
-Stealth's `scripts/seed-catalog.ts` is rewritten as `apps/backend/scripts/seed-procurement.ts` (or as a Medusa scheduled job for first-run-only). It:
+Stealth's `scripts/seed-catalog.ts` is rewritten as `apps/backend/scripts/seed-procurement.ts` (or as a Medusa scheduled job for first-run-only). The data source is the **Notion PO database** — the only system with operational history. The script:
 
-1. Reads historical PO data from the existing source (Notion DB export or stealth Supabase dump — TBD in implementation; whichever is fresher)
-2. Calls `createVendorWorkflow` for each unique vendor (idempotent on name)
-3. Calls `createItemWorkflow` for each unique canonical item
-4. Calls `createVendorItemWorkflow` to wire vendor ↔ item with historical last-price / last-ordered data
-5. Logs per-record success/failure; idempotent on re-run
+1. Reads historical PO data from a Notion DB export (CSV or via Notion API).
+2. Calls `createVendorWorkflow` for each unique vendor (idempotent on name).
+3. Calls `createItemWorkflow` for each unique canonical item.
+4. Calls `createVendorItemWorkflow` to wire vendor ↔ item with historical last-price / last-ordered data.
+5. Logs per-record success/failure; idempotent on re-run.
+
+Stealth has its own `seed-catalog.ts` against a Supabase database, but stealth was never operationally loaded with real data — its database is empty or holds only test fixtures. The Notion export is the only ground truth.
 
 ### 10.2 In-flight POs (Notion → Medusa)
 
 Out of scope for this slice. The cutover plan in §11 covers it.
 
-### 10.3 Stealth Supabase decommission
+### 10.3 Stealth Supabase
 
-The stealth Supabase project is **not** decommissioned at the end of this slice. It's kept as a reference snapshot for at least 30 days post-cutover (§11), then archived. This is a deliberate safety margin; users may discover missing data during the Notion → Medusa cutover that's easiest to recover from the stealth dump.
+The stealth Supabase project holds no operational data, so there is nothing to decommission carefully. It can be torn down at the end of this slice once we've confirmed the seed-procurement script doesn't need anything from it. The architectural artifacts that matter (schema design, ADRs, capability prompts, FSM design) live in code and docs, not in the Supabase instance.
 
 ## 11. Rollout / cutover
 

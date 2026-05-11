@@ -11,6 +11,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        "precision-navy": "#00204A",
+        "precision-cyan": "#00AEEF",
+      },
       maxWidth: {
         "8xl": "100rem",
       },

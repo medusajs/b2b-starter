@@ -4,8 +4,8 @@ import AccountButton from "@/modules/account/components/account-button"
 import CartButton from "@/modules/cart/components/cart-button"
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 import FilePlus from "@/modules/common/icons/file-plus"
-import LogoIcon from "@/modules/common/icons/logo"
 import { MegaMenuWrapper } from "@/modules/layout/components/mega-menu"
+import Image from "next/image"
 import { RequestQuoteConfirmation } from "@/modules/quotes/components/request-quote-confirmation"
 import { RequestQuotePrompt } from "@/modules/quotes/components/request-quote-prompt"
 import SkeletonAccountButton from "@/modules/skeletons/components/skeleton-account-button"
@@ -27,8 +27,14 @@ export async function NavigationHeader() {
               href="/"
             >
               <h1 className="small:text-base text-sm font-medium flex items-center">
-                <LogoIcon className="inline mr-2" />
-                Medusa B2B Starter
+                <Image
+                  src="/logo.png"
+                  alt="Precision"
+                  width={140}
+                  height={33}
+                  priority
+                  className="h-7 small:h-8 w-auto"
+                />
               </h1>
             </LocalizedClientLink>
 

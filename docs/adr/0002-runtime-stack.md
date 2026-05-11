@@ -1,0 +1,11 @@
+# Runtime stack: Postgres + Temporal Cloud, parent + child workflow topology
+
+**Decision:** Postgres on Supabase as the relational store and File reference target (with files in Supabase Storage), Temporal Cloud as the workflow orchestrator, with one **parent `PurchaseOrderWorkflow`** per PO supervising three child workflows (Place, Receive, Pay).
+
+**Why Postgres on Supabase:** the records doc's design is overtly relational — every diagram is `1 ──< many` and the most common query is line-level (`every PO with goat in last 6 months`). Multi-writer concurrency (agent drafts, classifier emits events, owner approves, projection updater syncs from Temporal) needs transactional semantics, not file-merge semantics. Obsidian was considered for human readability but does not survive line-level queries or concurrent writes.
+
+**Why Temporal Cloud:** chosen over a Postgres-only event-sourced FSM despite the technical case for "long-running state, not long-running compute" working at LIM scale. The deciding factor was solo-developer ergonomics: workflow-as-code abstraction, retry semantics, durable timers, and (crucially) a built-in UI for inspecting in-flight POs. The system is expected to grow complex; building those primitives on top of Postgres now would be reinventing what Temporal already provides. Self-hosting was rejected for ops cost.
+
+**Why parent + children, not peer workflows:** one workflow per PO is the right Temporal-UI mental model — search for `LIM-2026-0142`, get one workflow, drill into its phase children. Cancellation cascades naturally (signal the parent → children terminate appropriately). Cross-phase state has a home (parent holds vendor_id, original PO reference, approver context). Failure isolation between phases is preserved because child failures bubble up to the parent rather than corrupting sibling histories. Peer workflows linked only by `purchase_order_id` were rejected because finding "everything about PO 142" requires three top-level workflow searches and cancellation coordination is the developer's problem.
+
+**Locked-in lock-in:** `purchase_order.temporal_workflow_ids = { parent, place, receive, pay }`. Migration off Temporal in the future is non-trivial; the events table provides a fallback event-sourced log if needed.

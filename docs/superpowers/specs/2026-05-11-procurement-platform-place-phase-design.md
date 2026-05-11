@@ -618,7 +618,13 @@ The cost: jsonb payloads are loosely typed at the DB level. We accept this and e
 
 "LIM" appears in artifacts that are genuinely LIM-specific: PO number format (`LIM-YYYY-NNNN`), the procurement workflow rhythms, default unit conventions. "Lagos International Market" is the business; the platform models that business honestly. Vendor-platform names (Toast, QBO, Melio, Twilio, Notion, etc.) are not LIM-specific — they are choices that could change — and so they don't appear in the names of our own concepts.
 
-### 15.6 Lean on Medusa primitives; custom modules only where the platform has no native concept
+### 15.6a Every custom entity carries a `metadata jsonb` field
+
+Medusa's built-in entities (Product, Customer, Order, Variant, Address, etc.) all carry a `metadata jsonb (default '{}')` column. Following the framework's convention, every custom entity in this spec — `Vendor`, `VendorContact`, `VendorTag`, `ProductProcurementAttributes`, `VendorItem`, `PurchaseOrder`, `POLineItem`, `POSnapshot`, `Event` (procurementEvent), `File` (procurementFile) — adds the same column. It's an extension hatch for fields we didn't anticipate at design time; cheap migration, no maintenance cost.
+
+Discipline: `metadata` is for one-off, sparse, per-record annotations. Anything used by code paths (filters, indexes, validation) becomes a real column.
+
+### 15.6b Lean on Medusa primitives; custom modules only where the platform has no native concept
 
 Before designing any custom module, audit whether Medusa's built-ins already cover the need. Custom modules add data-modeling cost, admin-UI cost, and maintenance cost; using a built-in inherits those for free.
 

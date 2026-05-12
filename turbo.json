@@ -19,8 +19,12 @@
       "inputs": ["$TURBO_DEFAULT$", ".eslintrc*", "eslint.config.*"]
     },
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "jest.config.*"],
+      "inputs": ["$TURBO_DEFAULT$", "jest.config.*", "vitest.config.*"],
       "outputs": ["coverage/**"]
+    },
+    "typecheck": {
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json"],
+      "outputs": []
     },
     "test:integration:http": {
       "cache": false

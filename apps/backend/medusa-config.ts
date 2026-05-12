@@ -29,6 +29,9 @@ module.exports = defineConfig({
     [APPROVAL_MODULE]: {
       resolve: "./modules/approval",
     },
+    [Modules.INDEX]: {
+      resolve: "@medusajs/index",
+    },
     ...(redisUrl
       ? {
           [Modules.CACHE]: {

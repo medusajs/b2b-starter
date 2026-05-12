@@ -18,10 +18,10 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",
-    "@medusajs/icons": "2.15.0",
-    "@medusajs/js-sdk": "2.15.0",
-    "@medusajs/types": "2.15.0",
-    "@medusajs/ui": "4.1.10",
+    "@medusajs/icons": "2.15.1",
+    "@medusajs/js-sdk": "2.15.1",
+    "@medusajs/types": "2.15.1",
+    "@medusajs/ui": "4.1.11",
     "@paypal/paypal-js": "^5.0.6",
     "@paypal/react-paypal-js": "^7.8.1",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.17.5",
-    "@medusajs/ui-preset": "2.15.0",
+    "@medusajs/ui-preset": "2.15.1",
     "@types/lodash": "^4.14.195",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",

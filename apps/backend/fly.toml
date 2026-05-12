@@ -1,0 +1,54 @@
+# Fly.io configuration skeleton for apps/backend.
+# Real values (app name, region, secrets, scaling) are filled in by deployment ops
+# in a follow-up issue. This file exists only so the deploy pipeline has something
+# to point at.
+
+app = ""
+primary_region = ""
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[build]
+  # dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "9000"
+  # MEDUSA_FF_INDEX_ENGINE = "true"
+
+[http_service]
+  internal_port = 9000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[processes]
+  app = "pnpm --filter @b2b-starter/backend start"
+
+[deploy]
+  # release_command = "pnpm --filter @b2b-starter/backend exec medusa db:migrate"
+  strategy = "rolling"
+
+[[mounts]]
+  source = "backend_data"
+  destination = "/data"

@@ -3,7 +3,12 @@ import { APPROVAL_MODULE } from "./src/modules/approval";
 import { COMPANY_MODULE } from "./src/modules/company";
 import { loadEnv, defineConfig } from "@medusajs/framework/utils";
 
-loadEnv(process.env.NODE_ENV || "development", process.cwd());
+try {
+  loadEnv(process.env.NODE_ENV || "development", process.cwd());
+} catch (e) {
+  // loadEnv may fail during build if .env doesn't exist, that's OK
+  // Runtime env vars will be used when the server starts
+}
 
 module.exports = defineConfig({
   projectConfig: {

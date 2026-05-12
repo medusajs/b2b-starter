@@ -14,10 +14,10 @@ After designing six custom Medusa modules to model procurement (vendor, purchase
 |---|---|
 | Suppliers, POs, Purchase Receipts, Purchase Invoices, GL, multi-location inventory, BOMs, Sales Invoice | **ERPNext** (Frappe bench + LIM Custom App for Custom Fields and any LIM-specific DocTypes) |
 | B2B customer-facing storefront (wholesale; future retail online) | **Medusa** (existing B2B starter modules: Company, Employee, Quote, Approval) |
-| Catalog item (cross-system canonical) | **ERPNext Item** (Medusa Product mirrors; Toast Item mirrors) |
+| Catalog item (cross-system canonical) | **ERPNext Item** (canonical for procurement / internal records). Medusa Product mirrors one-way from ERPNext for storefront publishing. Toast Catalog is its own independent system (LIM edits via Toast's web back-office or Bulk Import CSV) that we **read-only mirror** — Toast's public API is read-only; no programmatic write path exists. |
 | Agent orchestration | **Temporal + stealth** (capability write-paths call ERPNext REST or Medusa SDK per ADR 0016) |
 | Messaging (email / SMS / Slack / ...) | `apps/messaging` peer service (unchanged) |
-| POS | **Toast** (synced from ERPNext Item) |
+| POS | **Toast** — read-only mirror via Toast API. catalog-health-worker (Slice 4) audits drift between Toast Catalog and ERPNext Item, surfaces mismatches as `LIM Activity` rows + Slack alerts. **No auto-write to Toast** — human resolves in Toast's web UI (or in ERPNext if the discrepancy was in ERPNext). |
 | Cross-system activity log / audit | Refined during implementation — likely a thin Custom DocType in the LIM Custom App; agent activities recorded there with target entity ID across systems |
 | Files / attachments | **ERPNext File** for procurement-side; messaging service for message-side; thin cross-link via opaque IDs |
 | BI / reporting | New read-only layer (Metabase / Lightdash) reading both ERPNext and Medusa |
@@ -55,3 +55,4 @@ Under these rules, failure / scaling / swappability isolation is at the service 
 - **New work**: hosting ERPNext (Frappe Cloud managed initially, or self-host on Fly/Railway), the `lim_procurement` Custom App git repo, initial DocType customization, Frappe framework expertise (Python + JS) for ERP-side customizations.
 - **Eventual retirements**: QBO retires when ERPNext Accounts is in production; Notion retires as the operational ERP when ERPNext is.
 - **The B2B storefront** (Slice 5+) becomes a clean Medusa project — Product/Variant/Category mirror from ERPNext Item; Customers/Companies/Quotes/Approvals stay in Medusa where they belong.
+- **Three catalogs, three flows.** ERPNext Item is canonical for buying + internal records (LIM-owned, writable via Frappe REST). Medusa Product is canonical for online wholesale storefront (pulled from ERPNext, writable via Medusa workflows). Toast Catalog is canonical for POS sales (Toast-owned, editable only via Toast UI / Bulk Import CSV; we read via API). catalog-health-worker is the reconciliation layer that audits drift between all three and surfaces it for human resolution.

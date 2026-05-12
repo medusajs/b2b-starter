@@ -62,6 +62,17 @@ An inbound or outbound communication on any channel (email, SMS, WhatsApp, Slack
 **Attachment** *(in `apps/messaging` for messages; in ERPNext File for procurement artifacts)*:
 Persistent file metadata. SHA256-deduped within each storage backend. Cross-references via opaque IDs.
 
+### External systems
+
+**Toast** *(POS — read-only from our side)*:
+The Point-of-Sale system at the LIM store. LIM's ~1,810 retail items live in Toast's catalog; sales transactions happen here. Toast's public API is **read-only**; we mirror their catalog + orders into our reporting/audit surfaces but cannot write back. Catalog edits happen in Toast's web back-office or via Toast's Bulk Import CSV — by humans, not the agent. catalog-health-worker (Slice 4) audits drift between Toast Catalog and ERPNext Item and surfaces mismatches for human resolution.
+
+**QBO** *(QuickBooks Online — current AP / GL system)*:
+LIM's current ledger of record. Retires when ERPNext Accounts is in production (per ADR 0005 amendment in ADR 0018).
+
+**Notion** *(current operational ERP — to be retired)*:
+The de facto ERP today (vendor profiles, PO database, invoice tracker, recurring obligations, reconciliation log, financial exceptions). Retires when ERPNext is in production.
+
 ### Agent-side terms
 
 **stealth**:

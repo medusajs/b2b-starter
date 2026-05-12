@@ -1,107 +1,118 @@
 # Backend — Domain Language
 
-LIM's procurement and commerce backend. Adopted from stealth's procurement glossary (Place / Receive / Pay) plus B2B commerce concepts from the Medusa starter.
+LIM's procurement and commerce platform. Vocabulary adopted from stealth's procurement glossary (Place / Receive / Pay) plus B2B commerce concepts from Medusa.
+
+Per ADR 0018, **ERPNext is the system of record** for procurement, vendors, items, inventory, accounting, and BOMs. **Medusa is scoped to commerce** — B2B storefront primitives (Company, Employee, Quote, Approval) and the future wholesale storefront. **Stealth (Temporal worker)** orchestrates AI-driven workflows that span both. **`apps/messaging`** is a peer service that handles inbound/outbound communications.
 
 When this document and code disagree, fix the code.
 
 ## Phases
 
-- **Place** — agreeing on an order with a Vendor.
-- **Receive** — getting the goods. (Out of scope until Slice 2.)
-- **Pay** — settling the bill. (Out of scope until Slice 3.)
+- **Place** — agreeing on an order with a Supplier. In ERPNext this spans `Purchase Order` (and optional `Request for Quotation` + `Supplier Quotation`).
+- **Receive** — getting the goods. In ERPNext this is `Purchase Receipt` (with multi-warehouse Stock Entry).
+- **Pay** — settling the bill. In ERPNext this is `Purchase Invoice` → `Payment Entry`, posting to the GL.
 
 ## Language
 
-### Procurement domain (custom modules)
+### Procurement (lives in ERPNext)
 
-**Vendor**:
-A supplier of goods to LIM, with its own status, rating, ordering rhythm, freight defaults, payment terms, and `agent_authority`.
-_Avoid_: supplier, seller.
+**Supplier**:
+A supplier of goods to LIM. Native ERPNext DocType. The LIM Custom App adds Custom Fields: `agent_authority` (select), `tone_reference_message_id` (data), `frequency` (select), `follow_up_level` (select), `default_lead_time_days` (int), `order_minimum_text` (small text), `vendor_sends_truck` (check), `we_arrange_freight` (check), `freight_fee` (currency), `pallet_fee` (currency).
+_Avoid_: vendor (use only as a colloquial synonym in conversation; in code and docs, use `Supplier`).
 
-**VendorContact**:
-Additional contacts on a Vendor beyond the denormalized main + AP contact (e.g., warehouse manager, driver dispatch).
+**Item**:
+The canonical buy/sell item identity, cross-supplier and cross-channel. Native ERPNext DocType. LIM Custom Fields: `storage_type` (select: ambient/refrigerated/frozen), `is_perishable` (check), `default_buy_unit` (link to UOM), `notes_for_agent` (long text).
 
-**VendorTag**:
-Free-text categorical labels for filtering vendors (`dry-goods`, `frozen`, `produce`).
+**Item Supplier** *(ERPNext native — joins Item and Supplier)*:
+Per-(supplier, item) knowledge: supplier's SKU for this item, last unit price, lead time, MOQ. LIM Custom Fields if needed.
 
-**VendorItem**:
-Per-(vendor, variant) knowledge — vendor SKU, cost-price history, lead time, vendor MOQ. Joins a `Vendor` to a Medusa `ProductVariant`.
+**Purchase Order** (PO):
+The agreement to buy specific items from a Supplier. Native ERPNext DocType. Identified by ERPNext's `name` (e.g., `LIM-PO-2026-00001`) plus its internal docname. LIM Custom Fields: `agent_active` (check), `drafted_by_capability` (data), `placeholder_count` (int — computed), `temporal_workflow_id` (data), `idempotency_key` (data).
+_Avoid_: order (ambiguous with sales orders; prefer **PO**), purchase, transaction.
 
-**PurchaseOrder** (PO):
-The agreement to buy specific items from a Vendor. Lives across Place / Receive / Pay until paid or written off. Identified by `LIM-YYYY-NNNN` and a UUID.
-_Avoid_: order (ambiguous with sales orders), purchase, transaction.
+**Purchase Receipt** *(ERPNext native — Receive phase)*:
+Record of goods physically arriving from a Supplier for a PO. Carries per-line received_qty, warehouse, batch/serial info.
 
-**POLineItem**:
-A single ordered line on a PO. References a Medusa `ProductVariant` (nullable for free-text lines drafted by the agent for unfamiliar products).
+**Purchase Invoice** *(ERPNext native — Pay phase)*:
+Supplier's request for payment after delivery. Often arrives as a PDF; ERPNext extracts structured fields. Posts to the General Ledger on submit.
 
-**POSnapshot**:
-A frozen, full copy of a PO + line items at a terminal moment (PO sent, payment initiated). Carries a reference to the actual rendered email/PDF the vendor saw. Audit-grade; rare.
+**Payment Entry** *(ERPNext native — Pay phase)*:
+The money sent to settle a Purchase Invoice. Posts to GL.
 
-**ProductProcurementAttributes**:
-Procurement-specific extension on a Medusa `Product` — `storage_type`, `is_perishable`, `default_buy_unit`, `notes_for_agent`. 1:1 with Product.
+**BOM** (Bill of Materials):
+For Seboye packaging — defines components and routing to produce a finished Item from raw inputs. Native ERPNext DocType.
 
-### Platform infrastructure (agnostic modules)
+### Commerce (lives in Medusa)
 
-**Activity**:
-An immutable, append-only record of something that happened on the platform — a state transition, an agent observation, a human action. Polymorphic by target entity (PO, vendor, product, message thread, etc.). Used by every domain (procurement, catalog-health, accounting, customer support…).
-_Avoid_: "event" alone (collides with Medusa's runtime Event Bus); "log entry" (too generic).
-
-**Attachment**:
-The persistent metadata for a stored file (PDF, photo, email body) — SHA256-deduped, classified by `file_kind`, with provenance. Storage backend is Medusa's File module; `Attachment` adds the metadata layer the File module doesn't persist.
-
-**AttachmentLink**:
-A many-to-many link recording that an `Attachment` is attached to a specific target entity (PO, bill, message thread, audit issue…). Polymorphic by `target_entity_type` + `target_entity_id`.
-
-### Medusa built-ins used as-is
+**Customer / Company / Employee / Quote / Approval**:
+B2B commerce primitives from the Medusa B2B starter. Unchanged from the original repo. Customer is the B2B business that places sales orders with LIM.
 
 **Product / ProductVariant / ProductCategory / ProductTag / Image**:
-LIM's canonical items live as Medusa `Product` records. Pack-size variants ("case of 12", "single unit") are `ProductVariant`s via the `ProductOption` `pack-format`. The LIM taxonomy (3 menus / 6 groups / ~63 subgroups) is a hierarchical `ProductCategory` tree. Brand is a `ProductTag`.
-_Avoid_: parallel-modeling an "Item" entity. LIM concepts map onto Medusa primitives.
+Medusa Product mirrors a publishable subset of ERPNext `Item` for storefront display. One-way sync ERPNext → Medusa. The Medusa side handles consumer-facing concerns (descriptions, images, categories for browsing); ERPNext owns the canonical buying/inventory side.
 
-**Customer / CustomerGroup / Company / Employee**:
-End-customer concepts (the B2B businesses we sell to). Used by the existing B2B starter; orthogonal to Vendor.
+### Platform infrastructure
+
+**Activity** *(cross-system audit log — to be refined during implementation)*:
+An immutable record of something that happened — a state transition, an agent observation, a human action. Polymorphic by target entity (PO, Supplier, Item, message thread, etc.). May live as a Custom DocType in the LIM Custom App or as a thin module elsewhere; the design intent from ADR 0014 carries forward, only the home changes.
+_Avoid_: "event" alone (collides with Frappe's event hooks); "log entry".
+
+**Message** *(in `apps/messaging`, not Medusa or ERPNext)*:
+An inbound or outbound communication on any channel (email, SMS, WhatsApp, Slack, voice, manual, photo). Stored in the messaging service's own Drizzle schema; cross-system references via opaque text IDs.
+
+**Attachment** *(in `apps/messaging` for messages; in ERPNext File for procurement artifacts)*:
+Persistent file metadata. SHA256-deduped within each storage backend. Cross-references via opaque IDs.
 
 ### Agent-side terms
 
+**stealth**:
+The procurement agent. Runs as a long-running Temporal worker (`apps/procurement-agent/`). Has a visible identity in admin event timelines and in the `#stealth` Slack channel. Versioned per-capability (`place-drafting@0.1.2`).
+
+**Capability**:
+A single LLM-using job in the agent — has its own prompt, structured output schema (Zod), optional read-only tools, and a Temporal activity wrapper. Per ADR 0016. One capability = one focused LLM call preceded by deterministic prep and followed by deterministic writes to ERPNext REST and/or Medusa SDK and/or messaging API.
+
 **`agent_authority`**:
-Per-vendor control over what stealth may commit autonomously. `full_auto` (commits without human approval), `draft_only` (drafts but never sends — default), `review_only` (observes only).
+Per-supplier control over what stealth may commit autonomously. `full_auto` (commits without human approval; downstream gates still apply), `draft_only` (drafts but never sends or marks state without explicit human approval — **default for new and seeded suppliers**), `review_only` (observes and classifies only, doesn't draft). Lives as a Custom Field on ERPNext Supplier.
 
 **Tone reference**:
-A single curated past inbound message pinned per Vendor used to calibrate the tone of agent-drafted outbound. Set by hand; never auto-updated.
+A single curated past inbound message pinned per Supplier (`tone_reference_message_id` Custom Field — opaque ref to the messaging service) used to calibrate the tone of agent-drafted outbound. Set by hand; never auto-updated.
 
 **Global pause**:
-A platform-wide flag (Redis-backed) suppressing all auto-fires. Per-vendor authority is checked first; if global pause is on, no auto-fire happens regardless.
+A platform-wide flag (Redis-backed with TTL) suppressing all agent auto-fires. Per-supplier authority is checked first; if global pause is on, no auto-fire happens regardless of authority. Toggled via admin control or `/stealth pause Xm` Slack slash command.
 
 **Placeholder**:
 An unresolved field in an agent draft (`[NEEDS PRICE]`, `[NEW ITEM]`, `[STALE: $X, last seen DATE]`). Sending is gated until cleared.
 
 **Coexistence**:
-The pattern by which humans and the agent share authority without explicit take-over. The agent re-reads state at every decision point and adapts. Workflows are idempotent. Medusa state-change events become Temporal signals so long-running workflows notice human edits.
+The pattern by which humans and the agent share authority without explicit take-over. Per ADR 0013. The agent re-reads state at every decision point. Workflows are idempotent. ERPNext webhooks become Temporal signals so long-running workflows notice human edits.
+
+**LIM Custom App**:
+The git-versioned Frappe app that holds LIM-specific extensions of ERPNext — Custom Fields, Custom DocTypes (sparingly), hooks, whitelisted REST methods. Thin by design; heavy logic lives in stealth and peer services.
 
 ## Relationships
 
-- A **Vendor** has many **PurchaseOrders**.
-- A **PurchaseOrder** has many **POLineItems**.
-- A **POLineItem** references a Medusa **ProductVariant** (zero-or-one — null for free-text lines).
-- A **Vendor** has many **VendorItems**; a **ProductVariant** has many **VendorItems** (one per vendor that carries it).
-- A **Product** has 0 or 1 **ProductProcurementAttributes**.
-- A **PurchaseOrder** has 0 or many **POSnapshots** (one per terminal moment).
-- An **Activity** targets at most one entity (by `target_entity_type` + `target_entity_id`) — usually a PurchaseOrder, Vendor, or Product.
-- An **Attachment** is linked to entities via **AttachmentLinks** (many-to-many).
+- A **Supplier** has many **Purchase Orders**.
+- A **Purchase Order** has many line items (referencing **Items**).
+- A **Purchase Order** has zero or one **Purchase Receipt** (Receive phase).
+- A **Purchase Receipt** has zero or one **Purchase Invoice** (Pay phase).
+- A **Purchase Invoice** has zero or many **Payment Entries** (could be split).
+- An **Item** appears in many **Item Supplier** rows (one per supplier that carries it).
+- A **Product** (Medusa) mirrors one **Item** (ERPNext) for items LIM publishes to its storefront.
+- An **Activity** targets at most one entity (by `target_entity_type` + `target_entity_id` — types may be cross-system: `purchase_order`, `supplier`, `item`, `message_thread`).
 
 ## Example dialogue
 
-> **Dev**: "When stealth drafts a PO for Yusol, where does the resulting PO live?"
-> **Owner**: "As a `PurchaseOrder` in Medusa, with line items referencing the right `ProductVariant`s. The activity timeline picks up the `po_drafted` Activity and shows it in admin with stealth as the source."
+> **Dev**: "When stealth drafts a PO for Yusol, where does it live?"
+> **Owner**: "As a `Purchase Order` in ERPNext. Stealth posts the structured output to a whitelisted Frappe method that creates the PO with `custom_drafted_by_capability='place-drafting@x.y.z'`. The timeline shows the `po_drafted` Activity. If Yusol's Supplier record has `agent_authority='full_auto'` and no placeholders remain, stealth marks the PO Submitted and sends the outbound email via the messaging service. Otherwise it waits for human approval."
 
-> **Dev**: "And if Yusol's name in Notion was 'Yusol Foods' but their invoices come from 'YSL Trading' — which is the Vendor?"
-> **Owner**: "`Yusol Foods` is the Vendor name. `YSL Trading` goes in `legal_name`. The agent uses the legal name on the PO header but addresses outbound emails to `main_contact_email`."
+> **Dev**: "And the storefront?"
+> **Owner**: "When we launch the wholesale storefront, Medusa pulls a subset of ERPNext Items (the ones we publish) as Medusa Products. Sales orders go through Medusa with Company/Quote/Approval primitives; on submit they create a corresponding Sales Order in ERPNext for inventory deduction and accounting. ERPNext stays the truth for what's in stock and what's been invoiced."
 
 ## Flagged ambiguities
 
-- **"Order"** — colloquially ("the Ilham order") refers to the **PO**. In writing, always prefer **PO** to avoid confusion with sales orders.
-- **"Account"** — never used bare. Disambiguate: **Vendor** (the business), **ChannelAccount** (a registered messaging identity), or `account_number_at_vendor` (your customer ID at the vendor).
-- **"Status"** — disambiguate which: **Vendor.status** (the relationship), **PurchaseOrder.place_status** / `.receive_status` / `.pay_status` (FSM states per phase).
-- **"Cancelled"** — three flavors: **Cancelled** (Place-phase terminal — we backed out), **Vendor Cancelled** (Receive-phase terminal — vendor reneged), **Written Off** (Pay-phase terminal — no settlement happened).
-- **"Event"** — when domain people say "event" they mean an **Activity** (something that happened, recorded in the activity log). Don't confuse with Medusa's `Event Bus` (runtime pub/sub) or Temporal signals.
-- **"File"** — domain people say "file"; the platform persists this as an **Attachment** with metadata. Medusa's `File` module is the storage backend (provider abstraction).
+- **"Order"** — colloquially ("the Ilham order") refers to the **PO**. In writing, always say **PO** (purchase order) or **Sales Order** (customer order) explicitly. Never bare "order."
+- **"Vendor"** — colloquial synonym for **Supplier**. In code and docs, use **Supplier** (ERPNext's term).
+- **"Account"** — never used bare. Disambiguate: **Supplier** (the business), **ChannelAccount** (a registered messaging identity), **Account** (ERPNext's chart-of-accounts entry — GL).
+- **"Event"** — domain people may say "event" meaning **Activity** (something that happened, recorded in the audit log). Don't confuse with Frappe Hooks (server-side event handlers) or Temporal signals.
+- **"Item"** — ERPNext's canonical buy/sell unit. Don't confuse with Medusa's "ProductVariant" — the storefront mirror.
+- **"Status"** — disambiguate which: **Supplier.disabled** (ERPNext), **Purchase Order.workflow_state** or `.docstatus` (ERPNext FSM), **agent_authority** (LIM Custom Field), our internal **Place/Receive/Pay phase** vocabulary.
+- **"Cancelled"** — flavors: Place-phase **Cancelled** (we backed out before/during ordering — PO `docstatus=2`), Receive-phase **Vendor Cancelled** (supplier reneged — Purchase Receipt not created), Pay-phase **Written Off** (no settlement happened — Purchase Invoice cancelled / written off).

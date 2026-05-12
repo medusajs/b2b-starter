@@ -33,11 +33,11 @@ When prompted (or under Site configuration → Build & deploy → Continuous dep
 | Field | Value |
 |---|---|
 | Base directory | `apps/storefront` |
-| Build command | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter storefront build` |
+| Build command | `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @b2b-starter/storefront build` |
 | Publish directory | `apps/storefront/.next` |
 | Functions directory | *(leave blank)* |
 
-> Note: the `pnpm --filter storefront build` filter assumes the workspace package name is `storefront`. If your build fails with "no project found", run `node -p "require('./apps/storefront/package.json').name"` locally to confirm the name and substitute it.
+> Note: the filter uses the exact workspace package name `@b2b-starter/storefront`. If you ever fork this repo and rename the package, update this build command accordingly.
 
 ### Next.js plugin
 
@@ -123,7 +123,7 @@ Now that the storefront URL is fixed, lock down CORS on Railway. Go back to `RAI
 
 | Symptom | Fix |
 |---|---|
-| Build fails: "package storefront not found" | Workspace name differs. Run `node -p "require('./apps/storefront/package.json').name"` locally and substitute in the build command. |
+| Build fails: "package not found" | The build command filter must match the workspace package name exactly. Confirm with `node -p "require('./apps/storefront/package.json').name"` — it should be `@b2b-starter/storefront`. |
 | Build fails: out of memory | Site configuration → Environment variables → add `NODE_OPTIONS=--max_old_space_size=4096`. |
 | Site loads but products don't | Wrong publishable key, or wrong backend URL. Check browser devtools network tab — calls to backend should return 200. |
 | Storefront calls backend but gets CORS errors | Railway `STORE_CORS` is wrong. See `RAILWAY_DEPLOYMENT.md` step 8. |

@@ -13,7 +13,7 @@ You will end up with:
 ## 0. Prerequisites
 
 - A Railway account ([railway.com](https://railway.com)) with a payment method on file (free trial covers initial usage; expect ~$5–10/month for a low-traffic demo)
-- The fork pushed to GitHub: `Metamorf-aus/saas-b2b-platform`, branch `main` (merge `claude/review-attached-docs-49sSU` into main first)
+- The repo pushed to GitHub: `Metamorf-aus/saas-b2b-platform`, branch `main`
 
 ---
 
@@ -47,23 +47,23 @@ Click on the backend service tile (the one connected to GitHub).
 | Repository | `Metamorf-aus/saas-b2b-platform` |
 | Branch | `main` |
 | Root Directory | *(leave blank — repo root)* |
-| Watch Paths | `apps/backend/**` *(optional, prevents storefront-only changes from triggering rebuilds)* |
 
 ### 3b. Settings → Build
 
 | Field | Value |
 |---|---|
-| Builder | **Railpack** |
-| Build Command | *(leave blank — defined in `railpack.toml`)* |
-| Pre-deploy Command | *(leave blank — `db:migrate` is included in the start command)* |
+| Builder | **Dockerfile** |
+| Dockerfile Path | `Dockerfile` |
+| Build Command | *(leave blank)* |
 
-> **Note:** A `railpack.toml` at the repo root defines the build steps and preserves the `.medusa` build artefacts (admin bundle + compiled server) in the final image. Without this, Medusa crashes on startup with "Could not find index.html in the admin build directory".
+> The `Dockerfile` at the repo root handles everything: installing dependencies, building the Medusa backend + admin bundle, and setting the start command.
 
 ### 3c. Settings → Deploy
 
 | Field | Value |
 |---|---|
-| Start Command | *(leave blank — defined in `railpack.toml` as `cd apps/backend && pnpm medusa db:migrate && pnpm start`)* |
+| Custom Start Command | *(leave blank — the Dockerfile `CMD` handles it)* |
+| Pre-deploy Command | `cd apps/backend && pnpm medusa db:migrate` |
 | Healthcheck Path | `/health` *(optional)* |
 | Restart Policy | `On Failure` |
 
@@ -81,10 +81,12 @@ In the backend service, go to **Variables**. Add the following.
 | `JWT_SECRET` | *(random, ~32 chars)* | |
 | `COOKIE_SECRET` | *(random, ~32 chars)* | |
 | `NODE_ENV` | `production` | |
+| `PORT` | `9000` | |
 | `STORE_CORS` | *(temporary)* `*` | We'll lock this down to the Netlify URL in step 8 |
 | `ADMIN_CORS` | *(temporary)* `*` | Same — locked down later |
 | `AUTH_CORS` | *(temporary)* `*` | Same — locked down later |
-| `MEDUSA_BACKEND_URL` | *(leave blank for now)* | Set after step 5 once Railway gives the public URL |
+| `MEDUSA_ADMIN_EMAIL` | `Billy@thepg.com.au` | Admin dashboard login |
+| `MEDUSA_ADMIN_PASSWORD` | `Precision3062` | Admin dashboard login |
 | `DISABLE_MEDUSA_ADMIN` | `false` | Keep the admin dashboard enabled |
 
 `REDIS_URL` is optional. The starter works without it — skip unless you want event subscribers / job queues.
@@ -96,9 +98,9 @@ In the backend service, go to **Variables**. Add the following.
 1. Settings → Networking → click **"Generate Domain"**.
 2. Railway gives you a URL like `pg-b2b-demo-backend-production.up.railway.app`.
 3. **Copy that URL.** Go to Variables, set `MEDUSA_BACKEND_URL=https://pg-b2b-demo-backend-production.up.railway.app`.
-4. Railway will redeploy automatically.
-
-Watch the **Deploy logs** until you see Medusa booted (`✓ Server is ready on port ...`). The `db:migrate` pre-deploy command runs first and you should see the schema migrations apply.
+4. Go to **Deployments** tab → **⋯** on the latest → **Redeploy**.
+5. Build takes **5–10 minutes** (the Dockerfile compiles the admin bundle — this is normal). Watch the build logs for "Building admin..." messages.
+6. When the deploy log shows the server started, visit `https://<your-railway-url>/health` — it should return `{"status":"ok"}`.
 
 ---
 
@@ -121,14 +123,14 @@ pnpm medusa exec ./src/migration-scripts/initial-data-seed.ts
 pnpm medusa exec ./src/migration-scripts/demo-b2b-seed.ts
 ```
 
-If a seed fails because data already exists, it's safe — the seed isn't idempotent, so only run each script once.
+If a seed fails because data already exists, it's safe to skip that script — don't run any script twice.
 
 ---
 
 ## 7. Get the publishable API key
 
 1. Open **`https://<your-railway-url>/app`** in a browser.
-2. Log in with **`Billy@thepg.com.au` / `Precision3062`** (the admin user from step 6a).
+2. Log in with **`Billy@thepg.com.au` / `Precision3062`**.
 3. Go to **Settings → Publishable API Keys**.
 4. There should be one called **"Default Publishable API Key"** (created by the initial seed).
 5. Click it and **copy the key value** — looks like `pk_01H...`.
@@ -157,11 +159,11 @@ Once the Netlify storefront is deployed and you have its URL (e.g. `https://pg-b
 
 | Symptom | Fix |
 |---|---|
-| Build fails with "pnpm: command not found" | Confirm Builder is set to **Railpack**. Railpack auto-detects pnpm from the lockfile and the `railpack.toml` build phase. |
-| Startup crash: "Could not find index.html in the admin build directory" | The `.medusa` build artefacts are missing from the image. Ensure `railpack.toml` is present at the repo root and the `[[fileOutputs]]` block is intact. |
-| Migration fails with "database does not exist" | The Postgres service hasn't finished provisioning. Wait 30s and redeploy. |
-| `pnpm medusa user` says command not found in shell | You're in the wrong directory. `cd apps/backend` first. |
-| Admin dashboard at `/app` returns 404 | Confirm `DISABLE_MEDUSA_ADMIN=false` and rebuild. |
+| Build fails "could not find index.html in admin build directory" | Builder is still Nixpacks/Railpack. Go back to step 3b and change Builder to **Dockerfile**. |
+| Deploy fails "Cannot find module medusa-config" | Custom Start Command is not blank. Go back to step 3c and clear it. |
+| Pre-deploy `db:migrate` fails with connection error | `DATABASE_URL` is resolving to empty. In Variables, replace `${{Postgres.DATABASE_URL}}` with the raw connection string (Railway → Postgres service → Variables → copy `DATABASE_URL` value → paste into backend service `DATABASE_URL`). |
+| Startup crash: server starts but `/health` 404s | Confirm `PORT=9000` is set in Variables. |
+| Admin dashboard at `/app` returns 404 | Confirm `DISABLE_MEDUSA_ADMIN=false` and redeploy. |
 | Storefront says "CORS blocked" | You haven't done step 8 yet, or there's a typo in the URL. |
 
 ---

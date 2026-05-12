@@ -1,76 +1,37 @@
 # Considered Conductor OSS for workflow orchestration; staying with Temporal
 
-Stealth's runtime stack chose Temporal Cloud (ADR 0002) and the merged platform inherits that choice (ADR 0007, ADR 0010). Conductor OSS — Netflix-originated, Orkes-maintained, Apache 2.0 — offers a credible alternative with native LLM/MCP orchestration, JSON workflow definitions, and easier self-hosting. We evaluated it and chose to stay with Temporal because the sunk investment is real, the TS SDK ergonomics are meaningfully better for our team size (solo dev with established Temporal mental model), and Conductor's strongest differentiator (AI-native task types for 14+ LLM providers + MCP tools) is something we'd want to wrap with our own harness (Langfuse, cost instrumentation, eval framework) anyway. Recording this decision so the trade-off is explicit, not implicit.
+We evaluated Conductor OSS (Netflix-originated, Apache 2.0, with a first-class Claude Code / Cursor / Copilot skill and native LLM/MCP task types) as an alternative to Temporal Cloud for procurement-agent. Research showed Conductor wins clearly on first-pass LLM-generated workflows and AI-task ergonomics, but Temporal wins on TypeScript SDK maturity, testing primitives, replay correctness, and maintainability of code-heavy workflows — which is our shape. We stay with Temporal; the procurement-agent is code-heavy and domain-heavy, exactly the workload Conductor's own community framing says belongs in Temporal.
 
-## What Conductor would buy us
+## Correction worth flagging
 
-- **Apache 2.0 throughout** (Temporal: OSS for self-host, Cloud is commercial)
-- **Easier self-hosting** (single Docker image + Postgres vs Temporal's multi-service architecture)
-- **Native LLM task types** for 14+ providers and MCP tools
-- **JSON workflow definitions** that LLMs can generate at runtime — relevant for "agent generates a workflow" scenarios (Slice 6+, hypothetical)
-- **First-class Human Task primitive** for in-UI approval workflows
-- **7 polyglot SDKs** (Temporal: ~5)
-- **Battle-tested at Netflix / Tesla / LinkedIn / JP Morgan** (Temporal: Stripe / Coinbase / Snap)
+An earlier draft of this evaluation claimed Temporal TypeScript workflows can't use async/await, conditionals, or loops. **That was wrong — those constraints apply to Medusa workflow composition functions, not Temporal.** Temporal TS workflows are regular `async` functions with `if`/`else`; the real constraint is determinism (no direct I/O in workflow code, no `Math.random()` / `Date.now()` outside Temporal APIs, side effects belong in activities). This is a much easier mental model for LLMs than Medusa's composition rules, and substantially weakens what was previously framed as a Conductor advantage.
 
-## What Temporal keeps for us
+## Evidence
 
-- **Mature TypeScript SDK** with `@temporalio/testing` in-process server (Conductor's TS support is workable but less polished)
-- **Workflows as code** beats workflows as JSON for our solo-dev velocity
-- **Temporal Cloud** mature managed offering; Orkes managed is newer
-- **Stealth's existing codebase** (capabilities scaffolded against Temporal activities, ADRs already written)
-- **Coexistence pattern** (ADR 0013) maps cleanly to Temporal signals; Conductor's Human Task is shaped for "approve in UI" not "Medusa event → workflow signal"
+Generic blind comparison commissioned 2026-05-12. Key findings:
+
+- **Temporal TS SDK**: ~838 stars, 54 commits in 90 days, mature `TestWorkflowEnvironment` + time-skipping test harness, idiomatic generic types throughout
+- **Conductor JS SDK**: ~52 stars, 22 commits in 90 days, younger and stringly-typed at the workflow definition layer (expression strings like `"${task_ref.output.body.field}"`)
+- **Workflow conciseness**: Conductor JSON is ~2.5× longer than equivalent Temporal TS for the same logic (verified by side-by-side order-approval example: ~80 lines JSON vs ~30 lines TS)
+- **Conductor Skills**: installs cleanly into Claude Code/Cursor/Codex/Copilot and provides the LLM with workflow schemas + examples + ops scripts. Real win for first-pass workflow generation; doesn't change long-term maintainability.
+- **AI task types**: Conductor's "14+ providers" marketing is actually 12 LLM providers + 3 vector DBs in source. Real, but more bounded than the marketing suggests.
+- **Pricing**: Temporal Cloud Essentials ~$100/mo for 1M actions; our expected workload (~1.5M actions/mo) lands around $125/mo. Orkes managed pricing isn't public.
+
+Independent agent bottom line: *"Prototype in Conductor if the workflow shape is mostly task graph + waits + LLM/tool calls. Choose Temporal if the workflow shape is code-heavy, domain-heavy, and likely to need long-term refactoring by TypeScript engineers."* Our procurement-agent is the second.
 
 ## When to reconsider
 
-- Temporal Cloud monthly cost exceeds a threshold worth migrating for (rough heuristic: >$200/mo)
-- LIM scales to 3+ AI agent flows and we want JSON-defined cross-agent orchestration cheaper than code-based
-- Compliance or cost requires full self-hosting; Conductor is operationally cheaper to self-host than Temporal
-- We want to expose "agent generates a new workflow" capability to operators (LLM-authored JSON workflows)
+- LIM scales to 3+ AI agent flows where most coordination is task-graph-shaped (not code-shaped) and one JSON workflow per flow is cheaper than maintaining N TypeScript workflows
+- Temporal Cloud monthly cost crosses a threshold worth migrating for (rough heuristic: ~$300+/mo)
+- We want to expose "agent generates a workflow at runtime" capability to operators — Conductor's data-shape natively supports this; Temporal would need a code-generation layer
+- Future workload becomes overwhelmingly LLM-task-orchestration rather than business-logic-heavy capability work
 
 ## Migration path if we revisit
 
-The migration is **mechanical, not architectural** — the activity-and-workflow shape is the same in both engines; only the SDK and workflow-definition format change.
+Updated estimate: still mechanical, not architectural. ~80% of work unchanged — Medusa modules, capabilities' prompts/schemas/tools, FSM design, eval harness, cost instrumentation, the messaging service. 7 of 29 issues are engine-specific. Per-capability migration: swap SDK imports, restructure activities into Conductor task workers (regular polling loops), translate Temporal workflow code into JSON definitions (mechanical but verbose). Effort: 1-2 weeks fluent / 2-3 weeks learning.
 
-**What stays unchanged (~80% of the work)**:
+**Cheapest migration windows**: right after C.1 (harness foundation) ships — the harness abstracts the engine; or before any production deploy locks operational workflow history.
 
-- All Medusa modules (vendor / item / purchaseOrder / activityLog / attachment / productProcurement / vendorItem)
-- The messaging service and all channel adapters
-- Capability prompts, Zod schemas, read-only tools (the AI logic itself)
-- ADR 0016 capability shape — only the activity wrapper file changes per capability
-- Place / Receive / Pay FSM design
-- Coexistence pattern (ADR 0013) — pattern is identical; implementation detail differs
-- Cost & budget instrumentation, eval harness, Langfuse
-- ~26 of the 29 vertical-slice issues (only the procurement-agent runtime issues are engine-specific)
+## What we lose by staying with Temporal — and how to recover it
 
-**What changes**:
-
-- `apps/procurement-agent/src/workflows/*.ts` — rewrite as Conductor JSON workflow definitions (Switch, Wait, SUB_WORKFLOW operators replace TS workflow code)
-- `apps/procurement-agent/src/activities/*.ts` → `apps/procurement-agent/src/workers/*.ts` — task worker pattern (polling loops) replaces Temporal activity registration
-- `apps/procurement-agent/src/agents/*/activity.ts` — swap Temporal SDK imports for Conductor SDK imports; logic stays
-- `apps/procurement-agent/src/clients/temporal.ts` → `clients/conductor.ts`
-- `apps/procurement-agent/src/worker.ts` — entry-point rewrite for Conductor's poll-based worker model
-- `apps/procurement-agent/src/subscribers/medusa-event.ts` — Medusa event → Conductor task completion event (different mechanism, same semantic)
-- `apps/procurement-agent/src/lib/idempotency.ts` — derivation switches from Temporal activity attempt ID to Conductor task reference name + dedup keys
-- Tests using `@temporalio/testing` → Conductor's local-server testing pattern (docker-compose conductor-server + Postgres)
-- Supersede ADRs 0002, 0007, 0010, 0016
-
-**Effort estimate**: 1-2 weeks of focused work for someone fluent in both engines; 2-3 weeks for someone learning Conductor as they go.
-
-**Migration timing — cheapest windows**:
-
-1. **Right after C.1 ships (harness foundation)** — the harness abstracts the engine, so swapping under it is cleanest
-2. **Before Slice 2 (Receive) starts** — each new phase adds more workflow code to port
-3. **Before C.10 (production deploy)** — once the worker is in prod and running real PO workflows, operational migration is more disruptive (export workflow history + restart strategy)
-
-**Migration timing — most expensive windows**:
-
-1. **After 6+ months of production runs** — accumulated execution history needs a strategy (export-and-replay vs accept loss and start fresh)
-2. **After multiple agent flows ship** — each agent adds workflow code to port
-3. **Mid-Slice during active development of a phase** — coordinate during a planning window, not mid-sprint
-
-**Risk profile**:
-
-- **LOW** for data model and business logic (untouched)
-- **MEDIUM** for workflow logic correctness (FSM transitions and signal handling need careful porting)
-- **MEDIUM** for the test harness (eval framework needs to work with new test setup)
-- **HIGH (week 1 of migration)** for deployment infra if we self-host Conductor (new server + Postgres setup; mitigated by using Orkes managed initially)
+Conductor's strongest concrete advantage is its Claude Code skill — a packaged prompt + schema + examples bundle that makes LLM-driven workflow authoring fast. We can partially recapture this for Temporal by writing our own `AGENTS.md` or `temporal-conventions.md` describing the deterministic workflow rules + stealth's capability patterns + signal/activity examples. Not free; not a separate ADR; tracked outside this decision.

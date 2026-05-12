@@ -2,17 +2,27 @@
   "name": "@b2b-starter/messaging",
   "version": "0.0.0",
   "private": true,
-  "description": "Messaging app stub — populated in B.0.",
+  "description": "Messaging service — inbound/outbound communications across channels (email, sms, whatsapp, slack, voice, manual, photo).",
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@b2b-starter/shared-types": "workspace:*"
+    "@b2b-starter/shared-types": "workspace:*",
+    "drizzle-orm": "^0.36.4",
+    "fastify": "^5.1.0",
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "drizzle-kit": "^0.28.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.5.3",
     "vitest": "^2.1.9"
   },

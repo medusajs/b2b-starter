@@ -8,14 +8,15 @@ WORKDIR /app
 # Copy entire monorepo
 COPY . .
 
-# Install all dependencies
+# Install all dependencies (populates pnpm store)
 RUN pnpm install --frozen-lockfile
 
 # Build the backend (medusa build → apps/backend/.medusa/server/)
 RUN pnpm --filter @b2b-starter/backend build
 
-# Symlink monorepo node_modules into the built server — avoids a second full npm install
-RUN ln -s /app/node_modules /app/apps/backend/.medusa/server/node_modules
+# Install production deps in the built server.
+# pnpm reuses packages already in its store from the step above — no re-download.
+RUN cd apps/backend/.medusa/server && pnpm install --prod --no-lockfile
 
 EXPOSE 9000
 

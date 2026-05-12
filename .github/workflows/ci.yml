@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      messaging: ${{ steps.filter.outputs.messaging }}
+      procurement: ${{ steps.filter.outputs.procurement }}
+      packages: ${{ steps.filter.outputs.packages }}
+      root: ${{ steps.filter.outputs.root }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'apps/backend/**'
+            messaging:
+              - 'apps/messaging/**'
+            procurement:
+              - 'apps/procurement-agent/**'
+            packages:
+              - 'packages/**'
+            root:
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - '.github/workflows/ci.yml'
+
+  ci:
+    name: typecheck + test
+    needs: changes
+    if: |
+      needs.changes.outputs.backend == 'true' ||
+      needs.changes.outputs.messaging == 'true' ||
+      needs.changes.outputs.procurement == 'true' ||
+      needs.changes.outputs.packages == 'true' ||
+      needs.changes.outputs.root == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build turbo filter list
+        id: filters
+        run: |
+          FILTERS=""
+          if [[ "${{ needs.changes.outputs.backend }}" == "true" ]]; then
+            FILTERS="$FILTERS --filter=@b2b-starter/backend..."
+          fi
+          if [[ "${{ needs.changes.outputs.messaging }}" == "true" ]]; then
+            FILTERS="$FILTERS --filter=@b2b-starter/messaging..."
+          fi
+          if [[ "${{ needs.changes.outputs.procurement }}" == "true" ]]; then
+            FILTERS="$FILTERS --filter=@b2b-starter/procurement-agent..."
+          fi
+          if [[ "${{ needs.changes.outputs.packages }}" == "true" ]]; then
+            FILTERS="$FILTERS --filter=./packages/*"
+          fi
+          if [[ "${{ needs.changes.outputs.root }}" == "true" || -z "$FILTERS" ]]; then
+            FILTERS=""
+          fi
+          echo "filters=$FILTERS" >> "$GITHUB_OUTPUT"
+
+      - name: Typecheck
+        run: pnpm exec turbo run typecheck ${{ steps.filters.outputs.filters }}
+
+      - name: Test
+        run: pnpm exec turbo run test ${{ steps.filters.outputs.filters }}

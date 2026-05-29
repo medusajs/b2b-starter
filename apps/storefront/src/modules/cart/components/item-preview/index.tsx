@@ -13,7 +13,7 @@ type ItemProps = {
 }
 
 const ItemPreview = ({ item, showBorders = true, currencyCode }: ItemProps) => {
-  const { handle } = item.variant?.product ?? {}
+  const { handle } = item.product ?? {};
 
   const maxQuantity = item.variant?.inventory_quantity ?? 100
 

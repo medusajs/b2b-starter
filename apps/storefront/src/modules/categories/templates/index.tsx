@@ -46,6 +46,7 @@ export default function CategoryTemplate({
             currentCategory={currentCategory}
             listName={currentCategory.name}
             data-testid="sort-by-container"
+            hideOptionsPicker
           />
           <div className="w-full">
             {currentCategory.products?.length === 0 ? (

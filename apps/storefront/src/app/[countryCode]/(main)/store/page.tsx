@@ -1,5 +1,7 @@
 import { listCategories } from "@/lib/data/categories"
 import { retrieveCustomer } from "@/lib/data/customer"
+import { listGlobalProductOptions } from "@/lib/data/product-options"
+import { parseOptionValueIds } from "@/lib/util/option-value-query"
 import SkeletonProductGrid from "@/modules/skeletons/templates/skeleton-product-grid"
 import RefinementList from "@/modules/store/components/refinement-list"
 import { SortOptions } from "@/modules/store/components/refinement-list/sort-products"
@@ -19,6 +21,7 @@ type Params = {
   searchParams: Promise<{
     sortBy?: SortOptions
     page?: string
+    optionValueIds?: string | string[]
   }>
   params: Promise<{
     countryCode: string
@@ -32,9 +35,13 @@ export default async function StorePage(props: Params) {
 
   const sort = sortBy || "created_at"
   const pageNumber = page ? parseInt(page) : 1
+  const optionValueIds = parseOptionValueIds(searchParams)
 
-  const categories = await listCategories()
-  const customer = await retrieveCustomer()
+  const [categories, customer, productOptions] = await Promise.all([
+    listCategories(),
+    retrieveCustomer(),
+    listGlobalProductOptions(),
+  ])
 
   return (
     <div className="bg-neutral-100">
@@ -44,7 +51,11 @@ export default async function StorePage(props: Params) {
       >
         <StoreBreadcrumb />
         <div className="flex flex-col small:flex-row small:items-start gap-3">
-          <RefinementList sortBy={sort} categories={categories} />
+          <RefinementList
+            sortBy={sort}
+            categories={categories}
+            productOptions={productOptions}
+          />
           <div className="w-full">
             <Suspense fallback={<SkeletonProductGrid />}>
               <PaginatedProducts
@@ -52,6 +63,7 @@ export default async function StorePage(props: Params) {
                 page={pageNumber}
                 countryCode={params.countryCode}
                 customer={customer}
+                optionValueIds={optionValueIds}
               />
             </Suspense>
           </div>

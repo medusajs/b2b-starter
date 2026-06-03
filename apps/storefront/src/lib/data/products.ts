@@ -106,7 +106,7 @@ export const listProducts = async ({
           limit,
           offset,
           region_id: region.id,
-          fields: "*variants.calculated_price",
+          fields: "*variants.calculated_price,*variants.options",
           ...queryParams,
         },
         headers,
@@ -136,11 +136,14 @@ export const listProductsWithSort = async ({
   queryParams,
   sortBy = "created_at",
   countryCode,
+  optionValueIds,
 }: {
   page?: number
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
+  queryParams?: HttpTypes.FindParams &
+    HttpTypes.StoreProductParams & { option_value_id?: string | string[] }
   sortBy?: SortOptions
   countryCode: string
+  optionValueIds?: string[]
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }
   nextPage: number | null
@@ -148,12 +151,19 @@ export const listProductsWithSort = async ({
 }> => {
   const limit = queryParams?.limit || 12
 
+  const dedupedOptionValueIds = optionValueIds?.length
+    ? Array.from(new Set(optionValueIds))
+    : undefined
+
   const {
-    response: { products, count },
+    response: { products },
   } = await listProducts({
     pageParam: 0,
     queryParams: {
       ...queryParams,
+      ...(dedupedOptionValueIds
+        ? { option_value_id: dedupedOptionValueIds }
+        : {}),
       limit: 100,
     },
     countryCode,
@@ -161,16 +171,22 @@ export const listProductsWithSort = async ({
 
   const sortedProducts = sortProducts(products, sortBy)
 
+  // When filtering by option_value_id, the API's `count` may not reflect the
+  // filtered set in client-side sort flows that pre-fetch a page of 100.
+  // Recompute count from the actual returned list so pagination is correct.
+  const effectiveCount = sortedProducts.length
+
   const pageParam = (page - 1) * limit
 
-  const nextPage = count > pageParam + limit ? pageParam + limit : null
+  const nextPage =
+    effectiveCount > pageParam + limit ? pageParam + limit : null
 
   const paginatedProducts = sortedProducts.slice(pageParam, pageParam + limit)
 
   return {
     response: {
       products: paginatedProducts,
-      count,
+      count: effectiveCount,
     },
     nextPage,
     queryParams,

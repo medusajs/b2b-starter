@@ -8,6 +8,7 @@ import { Container } from "@medusajs/ui"
 import SearchInResults from "./search-in-results"
 import { HttpTypes } from "@medusajs/types"
 import CategoryList from "./category-list"
+import OptionsPicker from "./options-picker"
 
 type RefinementListProps = {
   sortBy: SortOptions
@@ -15,6 +16,8 @@ type RefinementListProps = {
   "data-testid"?: string
   categories?: HttpTypes.StoreProductCategory[]
   currentCategory?: HttpTypes.StoreProductCategory
+  productOptions?: HttpTypes.StoreProductOption[]
+  hideOptionsPicker?: boolean
 }
 
 const RefinementList = ({
@@ -23,6 +26,8 @@ const RefinementList = ({
   "data-testid": dataTestId,
   categories,
   currentCategory,
+  productOptions,
+  hideOptionsPicker,
 }: RefinementListProps) => {
   const router = useRouter()
   const pathname = usePathname()
@@ -32,6 +37,7 @@ const RefinementList = ({
     (name: string, value: string) => {
       const params = new URLSearchParams(searchParams)
       params.set(name, value)
+      params.delete("page")
 
       return params.toString()
     },
@@ -40,7 +46,13 @@ const RefinementList = ({
 
   const setQueryParams = (name: string, value: string) => {
     const query = createQueryString(name, value)
-    router.push(`${pathname}?${query}`)
+    const nextUrl = query ? `${pathname}?${query}` : pathname
+    const currentSearch = searchParams.toString()
+    const currentUrl = currentSearch
+      ? `${pathname}?${currentSearch}`
+      : pathname
+    if (nextUrl === currentUrl) return
+    router.push(nextUrl)
   }
 
   return (
@@ -58,6 +70,9 @@ const RefinementList = ({
           categories={categories}
           currentCategory={currentCategory}
         />
+      )}
+      {!hideOptionsPicker && productOptions && productOptions.length > 0 && (
+        <OptionsPicker options={productOptions} />
       )}
     </div>
   )

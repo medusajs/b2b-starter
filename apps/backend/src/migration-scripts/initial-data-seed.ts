@@ -9,6 +9,7 @@ import {
   createApiKeysWorkflow,
   createCollectionsWorkflow,
   createProductCategoriesWorkflow,
+  createProductOptionsWorkflow,
   createProductsWorkflow,
   createRegionsWorkflow,
   createSalesChannelsWorkflow,
@@ -337,6 +338,36 @@ export default async function initial_data_seed({
     },
   });
 
+  const { result: productOptions } = await createProductOptionsWorkflow(
+    container
+  ).run({
+    input: {
+      product_options: [
+        {
+          title: "Storage",
+          values: ["256 GB", "512 GB"],
+        },
+        {
+          title: "Memory",
+          values: ["256 GB", "512 GB"],
+        },
+        {
+          title: "Color",
+          values: ["Blue", "Red", "Black", "White", "Purple"],
+        },
+      ],
+    },
+  });
+
+  const storageOption = productOptions.find((o) => o.title === "Storage")!;
+  const memoryOption = productOptions.find((o) => o.title === "Memory")!;
+  const colorOption = productOptions.find((o) => o.title === "Color")!;
+
+  const valueId = (
+    option: (typeof productOptions)[number],
+    value: string
+  ): string => option.values!.find((v) => v.value === value)!.id;
+
   await createProductsWorkflow(container).run({
     input: {
       products: [
@@ -364,12 +395,18 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Storage",
-              values: ["256 GB", "512 GB"],
+              id: storageOption.id,
+              value_ids: [
+                valueId(storageOption, "256 GB"),
+                valueId(storageOption, "512 GB"),
+              ],
             },
             {
-              title: "Color",
-              values: ["Blue", "Red"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Blue"),
+                valueId(colorOption, "Red"),
+              ],
             },
           ],
           variants: [
@@ -444,8 +481,11 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Color",
-              values: ["Black", "White"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Black"),
+                valueId(colorOption, "White"),
+              ],
             },
           ],
           variants: [
@@ -522,12 +562,18 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Memory",
-              values: ["256 GB", "512 GB"],
+              id: memoryOption.id,
+              value_ids: [
+                valueId(memoryOption, "256 GB"),
+                valueId(memoryOption, "512 GB"),
+              ],
             },
             {
-              title: "Color",
-              values: ["Purple", "Red"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Purple"),
+                valueId(colorOption, "Red"),
+              ],
             },
           ],
           variants: [
@@ -609,8 +655,11 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Color",
-              values: ["White", "Black"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "White"),
+                valueId(colorOption, "Black"),
+              ],
             },
           ],
           variants: [
@@ -686,8 +735,11 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Color",
-              values: ["Black", "White"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Black"),
+                valueId(colorOption, "White"),
+              ],
             },
           ],
           variants: [
@@ -759,8 +811,11 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Color",
-              values: ["Black", "White"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Black"),
+                valueId(colorOption, "White"),
+              ],
             },
           ],
           variants: [
@@ -832,8 +887,11 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Color",
-              values: ["Black", "White"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Black"),
+                valueId(colorOption, "White"),
+              ],
             },
           ],
           variants: [
@@ -905,8 +963,11 @@ export default async function initial_data_seed({
           ],
           options: [
             {
-              title: "Color",
-              values: ["Black", "White"],
+              id: colorOption.id,
+              value_ids: [
+                valueId(colorOption, "Black"),
+                valueId(colorOption, "White"),
+              ],
             },
           ],
           variants: [

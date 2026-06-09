@@ -1,48 +1,53 @@
-"use client"
-
-import { Github } from "@medusajs/icons"
-import { Heading } from "@medusajs/ui"
-import Button from "@/modules/common/components/button"
-import Image from "next/image"
+import LocalizedClientLink from "@/modules/common/components/localized-client-link"
+import { ArrowRight } from "@medusajs/icons"
 
 const Hero = () => {
   return (
-    <div className="h-[75vh] w-full border-b border-ui-border-base relative bg-neutral-100">
-      <Image
-        src="/hero-image.jpg"
-        alt="Hero background"
-        layout="fill"
-        quality={100}
-        priority
+    <section className="relative w-full min-h-[88vh] flex items-center bg-benzs-ink overflow-hidden">
+      {/* Background photo */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/benzs-hero.jpg')" }}
       />
-      <div className="absolute inset-0 z-1 flex flex-col justify-center items-center text-center small:p-32 gap-6">
-        <span>
-          <p className="text-neutral-600 text-xs uppercase">
-            Be light on your feet
+      {/* Navy gradient — heavier on the left for text legibility */}
+      <div className="absolute inset-0 bg-gradient-to-r from-benzs-ink via-benzs-ink/85 to-benzs-ink/20" />
+      <div className="absolute inset-0 bg-benzs-ink/20" />
+
+      <div className="relative z-10 content-container py-24">
+        <div className="max-w-2xl">
+          <p className="text-white/70 text-xs uppercase tracking-[0.25em] mb-6">
+            Established 1976 &middot; Brooklyn, NY
           </p>
 
-          <Heading
-            level="h1"
-            className="text-6xl leading-10 text-ui-fg-base font-normal mt-10 mb-5"
-          >
-            Portable Bestsellers
-          </Heading>
+          <h1 className="font-serif text-white font-medium leading-[1.05] text-5xl small:text-7xl">
+            Keeping <span className="text-benzs-gold italic">tradition</span>{" "}
+            fresh since 1976.
+          </h1>
 
-          <p className="leading-10 text-ui-fg-subtle font-normal text-lg">
-            See our widest selection of electronics
+          <p className="text-white/80 text-lg leading-relaxed mt-8 max-w-xl">
+            A family-run business making gefilte fish with the home made taste —
+            alongside a full line of fresh &amp; frozen fish and groceries, all
+            under strict kosher supervision, year round.
           </p>
-        </span>
-        <a
-          href="https://github.com/medusajs/b2b-starter-medusa"
-          target="_blank"
-        >
-          <Button variant="secondary" className="rounded-2xl">
-            <Github />
-            Github Repository
-          </Button>
-        </a>
+
+          <div className="flex flex-wrap items-center gap-4 mt-10">
+            <LocalizedClientLink
+              href="/store"
+              className="group inline-flex items-center gap-2 bg-white text-benzs-ink px-7 py-3.5 rounded-full text-sm font-semibold uppercase tracking-wider hover:bg-benzs-cream transition-colors"
+            >
+              Shop the Collection
+              <ArrowRight className="group-hover:translate-x-0.5 transition-transform" />
+            </LocalizedClientLink>
+            <LocalizedClientLink
+              href="/#story"
+              className="inline-flex items-center gap-2 border border-white/50 text-white px-7 py-3.5 rounded-full text-sm font-semibold uppercase tracking-wider hover:bg-white/10 transition-colors"
+            >
+              Our Story
+            </LocalizedClientLink>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 

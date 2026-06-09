@@ -11,6 +11,17 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        benzs: {
+          ink: "#0B1E38",
+          navy: "#104678",
+          red: "#ED1C24",
+          gold: "#C99A5B",
+          cream: "#F7F1E6",
+          sand: "#F0E7D6",
+          charcoal: "#202020",
+        },
+      },
       maxWidth: {
         "8xl": "100rem",
       },
@@ -25,6 +36,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)"],
+        serif: ["var(--font-playfair)", "Georgia", "Cambria", "serif"],
       },
       keyframes: {
         "accordion-open": {

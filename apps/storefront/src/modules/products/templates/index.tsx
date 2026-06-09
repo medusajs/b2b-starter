@@ -1,7 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import ImageGallery from "@/modules/products/components/image-gallery"
 import ProductActions from "@/modules/products/components/product-actions"
-import ProductTabs from "@/modules/products/components/product-tabs"
 import RelatedProducts from "@/modules/products/components/related-products"
 import ProductInfo from "@/modules/products/templates/product-info"
 import SkeletonRelatedProducts from "@/modules/skeletons/templates/skeleton-related-products"
@@ -9,6 +8,7 @@ import { notFound } from "next/navigation"
 import React, { Suspense } from "react"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import ProductFacts from "../components/product-facts"
+import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -25,28 +25,61 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     return notFound()
   }
 
+  const category = product.categories?.[0]
+
   return (
-    <div className="flex flex-col gap-y-2 my-2">
-      <div
-        className="content-container grid grid-cols-1 md:grid-cols-2 gap-2 w-full h-fit"
-        data-testid="product-container"
-      >
-        <ImageGallery product={product} />
-        <div className="flex flex-col bg-neutral-100 w-full gap-6 items-start justify-center small:p-20 p-6 h-full">
-          <ProductInfo product={product} />
-          <Suspense
-            fallback={<ProductActions product={product} region={region} />}
-          >
-            <ProductActionsWrapper id={product.id} region={region} />
-          </Suspense>
-          <ProductFacts product={product} />
+    <div className="bg-benzs-cream">
+      <div className="content-container pt-8 pb-12">
+        {/* Breadcrumb */}
+        <nav className="text-sm text-benzs-ink/50 mb-8 flex items-center gap-2">
+          <LocalizedClientLink href="/store" className="hover:text-benzs-red">
+            Our Products
+          </LocalizedClientLink>
+          {category && (
+            <>
+              <span>/</span>
+              <LocalizedClientLink
+                href={`/categories/${category.handle}`}
+                className="hover:text-benzs-red"
+              >
+                {category.name}
+              </LocalizedClientLink>
+            </>
+          )}
+          <span>/</span>
+          <span className="text-benzs-ink/70">{product.title}</span>
+        </nav>
+
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14 items-start"
+          data-testid="product-container"
+        >
+          <ImageGallery product={product} />
+          <div className="flex flex-col gap-6">
+            <ProductInfo product={product} />
+            <Suspense
+              fallback={<ProductActions product={product} region={region} />}
+            >
+              <ProductActionsWrapper id={product.id} region={region} />
+            </Suspense>
+            <ProductFacts product={product} />
+
+            {product.description && (
+              <div className="border-t border-black/10 pt-6">
+                <h2 className="font-serif text-2xl text-benzs-ink mb-3">
+                  Description
+                </h2>
+                <p className="text-benzs-ink/70 leading-relaxed whitespace-pre-line">
+                  {product.description}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <div className="content-container">
-        <ProductTabs product={product} />
-      </div>
+
       <div
-        className="content-container"
+        className="content-container pb-20"
         data-testid="related-products-container"
       >
         <Suspense fallback={<SkeletonRelatedProducts />}>

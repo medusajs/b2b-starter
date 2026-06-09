@@ -1,28 +1,33 @@
 import FeaturedProducts from "@/modules/home/components/featured-products"
 import Hero from "@/modules/home/components/hero"
+import TrustStrip from "@/modules/home/components/trust-strip"
+import Story from "@/modules/home/components/story"
+import WholesaleCta from "@/modules/home/components/wholesale-cta"
 import SkeletonFeaturedProducts from "@/modules/skeletons/templates/skeleton-featured-products"
 import { Metadata } from "next"
 import { Suspense } from "react"
 
 export const metadata: Metadata = {
-  title: "Medusa Next.js Starter Template",
+  title: "Benz's Fish — Wholesale Kosher Fish & Groceries",
   description:
-    "A performant frontend ecommerce starter template with Next.js 14 and Medusa.",
+    "Kosher fresh & frozen fish, classic gefilte, and pantry staples — wholesale to restaurants, caterers, hospitals and schools since 1976.",
 }
 
 export default async function Home(props: {
   params: Promise<{ countryCode: string }>
 }) {
   const params = await props.params
-
   const { countryCode } = params
 
   return (
-    <div className="flex flex-col gap-y-2 m-2">
+    <>
       <Hero />
+      <TrustStrip />
       <Suspense fallback={<SkeletonFeaturedProducts />}>
         <FeaturedProducts countryCode={countryCode} />
       </Suspense>
-    </div>
+      <Story />
+      <WholesaleCta />
+    </>
   )
 }

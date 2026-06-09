@@ -30,6 +30,12 @@ const ProductVariantsTable = ({
     0
   )
 
+  const hasSku = product.variants?.some((v) => !!v.sku)
+  const isDefaultOption = (val?: string) =>
+    val === "Default option" ||
+    val === "Default option value" ||
+    val === "Default"
+
   const handleQuantityChange = (variantId: string, quantity: number) => {
     setLineItemsMap((prev) => {
       const newLineItems = new Map(prev)
@@ -77,9 +83,11 @@ const ProductVariantsTable = ({
         <Table className="w-full rounded-xl overflow-hidden shadow-borders-base border-none ">
           <Table.Header className="border-t-0">
             <Table.Row className="bg-neutral-100 border-none hover:!bg-neutral-100">
-              <Table.HeaderCell className="px-4">SKU</Table.HeaderCell>
+              {hasSku && (
+                <Table.HeaderCell className="px-4">SKU</Table.HeaderCell>
+              )}
               {product.options?.map((option) => {
-                if (option.title === "Default option") {
+                if (isDefaultOption(option.title)) {
                   return null
                 }
                 return (
@@ -108,9 +116,11 @@ const ProductVariantsTable = ({
                     "border-b-0": index === product.variants?.length! - 1,
                   })}
                 >
-                  <Table.Cell className="px-4">{variant.sku}</Table.Cell>
+                  {hasSku && (
+                    <Table.Cell className="px-4">{variant.sku}</Table.Cell>
+                  )}
                   {variant.options?.map((option, index) => {
-                    if (option.value === "Default option value") {
+                    if (isDefaultOption(option.value)) {
                       return null
                     }
                     return (

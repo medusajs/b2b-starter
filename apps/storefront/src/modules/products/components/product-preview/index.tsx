@@ -1,10 +1,8 @@
 import { getProductPrice } from "@/lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
-import { Text, clx } from "@medusajs/ui"
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 import Thumbnail from "../thumbnail"
-import PreviewAddToCart from "./preview-add-to-cart"
-import PreviewPrice from "./price"
+import AddToCartLink from "./add-to-cart-link"
 
 export default async function ProductPreview({
   product,
@@ -23,17 +21,21 @@ export default async function ProductPreview({
     product,
   })
 
-  const inventoryQuantity = product.variants?.reduce((acc, variant) => {
-    return acc + (variant?.inventory_quantity || 0)
-  }, 0)
+  const subtitle =
+    product.subtitle || product.categories?.[0]?.name || undefined
+
+  const description = product.description?.split(". ")[0]
 
   return (
-    <LocalizedClientLink href={`/products/${product.handle}`} className="group">
-      <div
-        data-testid="product-wrapper"
-        className="flex flex-col gap-4 relative aspect-[3/5] w-full overflow-hidden p-4 bg-white shadow-borders-base rounded-lg group-hover:shadow-[0_0_0_4px_rgba(0,0,0,0.1)] transition-shadow ease-in-out duration-150"
+    <div className="group flex flex-col h-full">
+      <LocalizedClientLink
+        href={`/products/${product.handle}`}
+        className="block"
       >
-        <div className="w-full h-full p-10">
+        <div
+          data-testid="product-wrapper"
+          className="relative aspect-square w-full overflow-hidden rounded-lg bg-white border border-black/5 p-6 transition-shadow duration-200 group-hover:shadow-xl"
+        >
           <Thumbnail
             thumbnail={product.thumbnail}
             images={product.images}
@@ -41,37 +43,47 @@ export default async function ProductPreview({
             isFeatured={isFeatured}
           />
         </div>
-        <div className="flex flex-col txt-compact-medium">
-          <Text className="text-neutral-600 text-xs">BRAND</Text>
-          <Text className="text-ui-fg-base" data-testid="product-title">
-            {product.title}
-          </Text>
-        </div>
-        <div className="flex flex-col gap-0">
-          {cheapestPrice && <PreviewPrice price={cheapestPrice} />}
-          <Text className="text-neutral-600 text-[0.6rem]">Excl. VAT</Text>
-        </div>
-        <div className="flex justify-between">
-          <div className="flex flex-row gap-1 items-center">
-            <span
-              className={clx({
-                "text-green-500": inventoryQuantity && inventoryQuantity > 50,
-                "text-orange-500":
-                  inventoryQuantity &&
-                  inventoryQuantity <= 50 &&
-                  inventoryQuantity > 0,
-                "text-red-500": inventoryQuantity === 0,
-              })}
+      </LocalizedClientLink>
+
+      <div className="mt-4 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <LocalizedClientLink
+            href={`/products/${product.handle}`}
+            className="block"
+          >
+            <h3
+              className="font-serif text-lg text-benzs-ink leading-snug group-hover:text-benzs-red transition-colors"
+              data-testid="product-title"
             >
-              •
+              {product.title}
+            </h3>
+          </LocalizedClientLink>
+          {cheapestPrice && (
+            <span
+              className="text-benzs-red font-semibold whitespace-nowrap text-sm pt-1"
+              data-testid="price"
+            >
+              {cheapestPrice.calculated_price}
             </span>
-            <Text className="text-neutral-600 text-xs">
-              {inventoryQuantity} left
-            </Text>
-          </div>
-          <PreviewAddToCart product={product} region={region} />
+          )}
+        </div>
+
+        {subtitle && (
+          <p className="text-[0.7rem] uppercase tracking-wider text-benzs-ink/50 mt-1">
+            {subtitle}
+          </p>
+        )}
+
+        {description && (
+          <p className="text-sm text-benzs-ink/60 leading-relaxed mt-2 line-clamp-2">
+            {description}.
+          </p>
+        )}
+
+        <div className="mt-3 pt-1">
+          <AddToCartLink product={product} region={region} />
         </div>
       </div>
-    </LocalizedClientLink>
+    </div>
   )
 }

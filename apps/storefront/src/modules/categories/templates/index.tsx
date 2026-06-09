@@ -30,16 +30,31 @@ export default function CategoryTemplate({
   if (!currentCategory || !countryCode) notFound()
 
   return (
-    <div className="bg-neutral-100">
-      <div
-        className="flex flex-col py-6 content-container gap-4"
-        data-testid="category-container"
-      >
+    <div className="bg-benzs-cream min-h-screen">
+      <div className="content-container pt-6">
         <CategoryBreadcrumb
           categories={categories}
           category={currentCategory}
         />
-        <div className="flex flex-col small:flex-row small:items-start gap-3">
+      </div>
+      <div className="content-container pt-4 pb-2">
+        <p className="text-benzs-red text-xs uppercase tracking-[0.25em] font-semibold mb-3">
+          The Collection
+        </p>
+        <h1 className="font-serif text-benzs-ink text-4xl small:text-5xl font-medium leading-tight">
+          {currentCategory.name}
+        </h1>
+        {currentCategory.description && (
+          <p className="text-benzs-ink/70 text-base mt-3 max-w-2xl leading-relaxed">
+            {currentCategory.description}
+          </p>
+        )}
+      </div>
+      <div
+        className="flex flex-col pt-4 pb-10 content-container gap-4"
+        data-testid="category-container"
+      >
+        <div className="flex flex-col small:flex-row small:items-start gap-6">
           <RefinementList
             sortBy={sort}
             categories={categories}

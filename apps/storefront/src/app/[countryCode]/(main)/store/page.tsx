@@ -3,7 +3,6 @@ import { retrieveCustomer } from "@/lib/data/customer"
 import SkeletonProductGrid from "@/modules/skeletons/templates/skeleton-product-grid"
 import RefinementList from "@/modules/store/components/refinement-list"
 import { SortOptions } from "@/modules/store/components/refinement-list/sort-products"
-import StoreBreadcrumb from "@/modules/store/components/store-breadcrumb"
 import PaginatedProducts from "@/modules/store/templates/paginated-products"
 import { Metadata } from "next"
 import { Suspense } from "react"
@@ -51,11 +50,10 @@ export default async function StorePage(props: Params) {
         </p>
       </div>
       <div
-        className="flex flex-col py-6 content-container gap-4"
+        className="flex flex-col pt-4 pb-10 content-container gap-4"
         data-testid="category-container"
       >
-        <StoreBreadcrumb />
-        <div className="flex flex-col small:flex-row small:items-start gap-3">
+        <div className="flex flex-col small:flex-row small:items-start gap-6">
           <RefinementList sortBy={sort} categories={categories} />
           <div className="w-full">
             <Suspense fallback={<SkeletonProductGrid />}>

@@ -1,9 +1,8 @@
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
-import Radio from "@/modules/common/components/radio"
 import SquareMinus from "@/modules/common/icons/square-minus"
 import SquarePlus from "@/modules/common/icons/square-plus"
 import { HttpTypes } from "@medusajs/types"
-import { Container, Text } from "@medusajs/ui"
+import { clx } from "@medusajs/ui"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 
@@ -78,43 +77,52 @@ const CategoryList = ({
   const renderCategory = (category: HttpTypes.StoreProductCategory) => {
     const hasChildren = category.category_children.length > 0
     const isExpanded = expandedCategories.includes(category.id)
-    const paddingLeft = getCategoryMarginLeft(category)
+    const active = isCurrentCategory(category.handle)
+
+    const linkClasses = clx(
+      "flex items-center justify-between gap-2 px-3 py-2 rounded-md transition-colors text-start",
+      active
+        ? "bg-benzs-red/10 text-benzs-red font-semibold"
+        : "text-benzs-ink/70 hover:bg-black/[0.04] hover:text-benzs-red"
+    )
+    const href = `/categories/${category.handle}${
+      searchParams.size ? `?${searchParams.toString()}` : ""
+    }`
 
     return (
       <li key={category.id}>
-        <div className={`flex items-center gap-2 mb-2 pl-${paddingLeft}`}>
-          {hasChildren ? (
-            <div className="flex items-center gap-2 hover:text-neutral-700">
-              <button onClick={() => toggleCategory(category.id)}>
-                {isExpanded ? (
-                  <SquareMinus className="h-3 mx-1" />
-                ) : (
-                  <SquarePlus className="h-3 mx-1" />
-                )}
-              </button>
-              <LocalizedClientLink
-                href={`/categories/${category.handle}${
-                  searchParams.size ? `?${searchParams.toString()}` : ""
-                }`}
-                className="flex gap-2 items-center hover:text-neutral-700"
-              >
-                {category.name} ({category.products?.length})
-              </LocalizedClientLink>
-            </div>
-          ) : (
-            <LocalizedClientLink
-              href={`/categories/${category.handle}${
-                searchParams.size ? `?${searchParams.toString()}` : ""
-              }`}
-              className="flex gap-2 items-center hover:text-neutral-700 text-start hover:cursor-pointer"
+        {hasChildren ? (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => toggleCategory(category.id)}
+              className="text-benzs-ink/40 hover:text-benzs-ink"
+              aria-label="Toggle subcategories"
             >
-              <Radio checked={isCurrentCategory(category.handle)} />
-              {category.name} ({category.products?.length})
+              {isExpanded ? (
+                <SquareMinus className="h-3.5" />
+              ) : (
+                <SquarePlus className="h-3.5" />
+              )}
+            </button>
+            <LocalizedClientLink href={href} className={clx(linkClasses, "flex-1")}>
+              <span>{category.name}</span>
+              <span className="text-benzs-ink/40">
+                {category.products?.length}
+              </span>
             </LocalizedClientLink>
-          )}
-        </div>
+          </div>
+        ) : (
+          <LocalizedClientLink href={href} className={linkClasses}>
+            <span>{category.name}</span>
+            <span
+              className={active ? "text-benzs-red" : "text-benzs-ink/40"}
+            >
+              {category.products?.length}
+            </span>
+          </LocalizedClientLink>
+        )}
         {hasChildren && isExpanded && (
-          <ul>
+          <ul className="ml-4">
             {category.category_children.map((childId) => {
               const childCategory = categories.find(
                 (cat) => cat.id === childId.id
@@ -128,24 +136,24 @@ const CategoryList = ({
   }
 
   return (
-    <Container className="flex flex-col p-0 divide-y divide-neutral-200">
-      <div className="flex justify-between items-center p-3">
-        <Text className="text-sm font-medium">Categories</Text>
+    <div className="bg-white border border-black/5 rounded-lg overflow-hidden">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-black/5">
+        <h3 className="font-serif text-lg text-benzs-ink">Categories</h3>
         {pathname.includes("/categories") && (
           <LocalizedClientLink
             href="/store"
-            className="text-xs text-neutral-500 hover:text-neutral-700"
+            className="text-xs text-benzs-red hover:underline"
           >
             Clear
           </LocalizedClientLink>
         )}
       </div>
-      <ul className="flex flex-col gap-3 text-sm p-3 text-neutral-500">
+      <ul className="flex flex-col gap-0.5 text-sm p-2">
         {categories
           .filter((cat) => cat.parent_category_id === null)
           .map(renderCategory)}
       </ul>
-    </Container>
+    </div>
   )
 }
 

@@ -1,5 +1,4 @@
 import { model } from "@medusajs/framework/utils";
-import { Employee } from "./employee";
 
 export const Company = model.define("company", {
   id: model
@@ -21,4 +20,17 @@ export const Company = model.define("company", {
     .enum(["never", "daily", "weekly", "monthly", "yearly"])
     .default("monthly"),
   employees: model.hasMany(() => Employee),
+});
+
+export const Employee = model.define("employee", {
+  id: model
+    .id({
+      prefix: "emp",
+    })
+    .primaryKey(),
+  spending_limit: model.bigNumber().default(0),
+  is_admin: model.boolean().default(false),
+  company: model.belongsTo(() => Company, {
+    mappedBy: "employees",
+  }),
 });

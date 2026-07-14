@@ -5,9 +5,20 @@ import { loadEnv, defineConfig } from "@medusajs/framework/utils";
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
+const parseBoolean = (value?: string) => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return value === "true";
+};
+
+const cookieSecure = parseBoolean(process.env.COOKIE_SECURE);
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    redisUrl: process.env.REDIS_URL,
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
@@ -15,6 +26,13 @@ module.exports = defineConfig({
       jwtSecret: process.env.JWT_SECRET,
       cookieSecret: process.env.COOKIE_SECRET,
     },
+    ...(cookieSecure === undefined
+      ? {}
+      : {
+          cookieOptions: {
+            secure: cookieSecure,
+          },
+        }),
   },
   modules: {
     [COMPANY_MODULE]: {

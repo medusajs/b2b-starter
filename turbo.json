@@ -3,13 +3,7 @@
   "tasks": {
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**",
-        ".medusa/server/**",
-        ".medusa/admin/**"
-      ]
+      "outputs": ["dist/**", ".medusa/server/**", ".medusa/admin/**"]
     },
     "dev": {
       "cache": false,

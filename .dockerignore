@@ -1,0 +1,14 @@
+.git
+.github
+.turbo
+node_modules
+**/node_modules
+apps/backend/.cache
+apps/backend/.medusa
+apps/backend/coverage
+*.log
+.DS_Store
+.env
+.env.*
+apps/backend/.env
+docker-compose.override.yml

@@ -53,7 +53,7 @@ export const QuotesTable = () => {
         noRecords={{
           title: "No quotes found",
           message:
-            "There are currently no quotes. Create one from the storefront.",
+            "There are currently no quotes. Create one through the Store API or your external client.",
         }}
       />
     </div>

@@ -11,9 +11,6 @@ jobs:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${{ secrets.MEDUSA_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${{ secrets.MEDUSA_BACKEND_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

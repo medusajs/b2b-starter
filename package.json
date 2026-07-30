@@ -15,7 +15,7 @@
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "@medusajs/eslint-plugin": "2.16.0",
+    "@medusajs/eslint-plugin": "2.18.0",
     "eslint": "^9.13.0",
     "jiti": "^2.7.0",
     "turbo": "^2.3.3"

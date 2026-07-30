@@ -13,8 +13,8 @@ importers:
   .:
     devDependencies:
       '@medusajs/eslint-plugin':
-        specifier: 2.16.0
-        version: 2.16.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+        specifier: 2.18.0
+        version: 2.18.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       eslint:
         specifier: ^9.13.0
         version: 9.39.4(jiti@2.7.0)
@@ -1502,8 +1502,8 @@ packages:
       react-router-dom:
         optional: true
 
-  '@medusajs/eslint-plugin@2.16.0':
-    resolution: {integrity: sha512-VBknFF/B6SM4lq5EAJoduYj0M6dkg6qK+JN8cRYELkQZAg8y3nUGvLsh+GxI8X9OQFjHeoPsfvzASVLsfnnwzg==}
+  '@medusajs/eslint-plugin@2.18.0':
+    resolution: {integrity: sha512-Xsy9dPD5RTEvbMmjtw8dPIsNxXgTVYbubtFALIc6zbISlFUClWK7EAMiQb08IaLxf4a6LaSW7ZzMHwh5xcEC8g==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0
@@ -10670,7 +10670,7 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@medusajs/eslint-plugin@2.16.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
+  '@medusajs/eslint-plugin@2.18.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/parser': 8.50.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       '@typescript-eslint/utils': 8.50.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)

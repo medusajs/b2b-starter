@@ -1,8 +1,4 @@
-import {
-  AdminOrder,
-  AdminOrderLineItem,
-  AdminOrderPreview,
-} from "@medusajs/framework/types";
+import { AdminOrder, AdminOrderPreview } from "@medusajs/framework/types";
 import { Button, Heading, Input, toast } from "@medusajs/ui";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,7 +57,7 @@ export const ManageItemsSection = ({
       (i) =>
         i.title.toLowerCase().includes(filterTerm) ||
         i.product_title?.toLowerCase().includes(filterTerm)
-    ) as AdminOrderLineItem[];
+    );
   }, [preview, filterTerm]);
 
   const originalItemsMap = useMemo(() => {

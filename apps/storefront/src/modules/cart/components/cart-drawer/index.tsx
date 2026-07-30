@@ -29,9 +29,9 @@ const CartDrawer = ({
   freeShippingPrices,
   ...props
 }: CartDrawerProps) => {
-  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(
-    undefined
-  )
+  const [activeTimer, setActiveTimer] = useState<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined)
   const [isOpen, setIsOpen] = useState(false)
 
   const open = () => setIsOpen(true)

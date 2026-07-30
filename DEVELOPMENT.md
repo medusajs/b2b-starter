@@ -69,9 +69,22 @@ pnpm dev          # root: backend + storefront via turbo
 
 Reset the database at any time with drop + create + `db:migrate` (the seed re-runs on a fresh DB).
 
+## Tests
+
+- **Unit** (`apps/backend`): `pnpm test:unit` — matches `src/**/__tests__/**/*.unit.spec.ts` (none yet; CI runs with `--passWithNoTests`).
+- **Integration** (`apps/backend`): `pnpm test:integration:http` — boots real app instances against throwaway Postgres databases. Needs `DB_USERNAME` / `DB_PASSWORD` env vars with rights to create databases.
+- **E2E smoke** (`apps/e2e`, Playwright): expects a **running** backend (9000) + storefront (8000), then `pnpm --filter @b2b-starter/e2e test:e2e`. First time: `pnpm --filter @b2b-starter/e2e exec playwright install chromium`. Set `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` to also exercise the store-API check.
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, backend build, unit + integration tests, and the e2e smoke suite on PRs and pushes to `main`.
+
 ## Windows notes
 
-- Use **Git Bash** for the backend test scripts (`test:unit` etc.) — they use `VAR=x` env prefixes that PowerShell/cmd don't support.
+- pnpm executes package scripts through **cmd.exe**, so scripts with `VAR=x` env prefixes (the backend `test:*` scripts) fail even from Git Bash. Either set the env vars in Git Bash and call jest directly:
+  ```bash
+  TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules \
+  DB_USERNAME=postgres DB_PASSWORD=<pw> pnpm exec jest --runInBand --forceExit
+  ```
+  or point pnpm at bash once: `pnpm config set script-shell "C:\\Program Files\\Git\\bin\\bash.exe"`.
 - Stopping `pnpm dev` can orphan `node` processes that keep ports 8000/9000 bound. Find and kill them with:
   ```powershell
   Get-NetTCPConnection -LocalPort 8000,9000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }

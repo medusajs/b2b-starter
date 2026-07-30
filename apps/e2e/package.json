@@ -1,0 +1,14 @@
+{
+  "name": "@b2b-starter/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "End-to-end smoke tests (Playwright) against a running backend + storefront.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0",
+    "@types/node": "^20.0.0"
+  }
+}

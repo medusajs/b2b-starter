@@ -1,0 +1,176 @@
+# CI: lint, typecheck, unit + integration tests, and a Playwright smoke run
+# against a fully booted backend + storefront.
+#
+# Secrets policy: this workflow uses only low-sensitivity throwaway values
+# (CI-local database password, dummy JWT/cookie secrets). Real runtime secrets
+# live in Medusa Cloud per-environment settings, never here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Required by medusa-config.ts (no fallbacks since 2.18).
+  JWT_SECRET: ci-only-jwt-secret
+  COOKIE_SECRET: ci-only-cookie-secret
+  STORE_CORS: http://localhost:8000
+  ADMIN_CORS: http://localhost:9000
+  AUTH_CORS: http://localhost:9000
+
+jobs:
+  checks:
+    name: Lint, typecheck, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # version comes from package.json "packageManager"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint backend
+        run: pnpm --filter @b2b-starter/backend lint
+
+      - name: Lint storefront
+        run: pnpm --filter @b2b-starter/storefront lint
+
+      - name: Typecheck backend
+        run: pnpm --filter @b2b-starter/backend exec tsc --noEmit
+
+      - name: Typecheck storefront
+        run: pnpm --filter @b2b-starter/storefront exec tsc --noEmit
+
+      - name: Build backend
+        run: pnpm --filter @b2b-starter/backend build
+
+      - name: Unit tests
+        run: pnpm --filter @b2b-starter/backend test:unit -- --passWithNoTests
+
+      - name: Integration tests (HTTP)
+        run: pnpm --filter @b2b-starter/backend test:integration:http
+        env:
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+  e2e:
+    name: E2E smoke (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/b2b_ci
+      DB_NAME: b2b_ci
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+      NEXT_PUBLIC_BASE_URL: http://localhost:8000
+      NEXT_PUBLIC_DEFAULT_REGION: de
+      REVALIDATE_SECRET: ci-only-revalidate-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Create database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -c 'CREATE DATABASE b2b_ci'
+
+      - name: Migrate + seed
+        run: pnpm --filter @b2b-starter/backend exec medusa db:migrate
+
+      - name: Create admin user
+        run: pnpm --filter @b2b-starter/backend exec medusa user -e ci-admin@test.com -p ci-supersecret
+
+      - name: Start backend
+        run: |
+          nohup pnpm --filter @b2b-starter/backend dev > backend.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:9000/health > /dev/null; then
+              echo "backend healthy after ${i} polls"; exit 0
+            fi
+            sleep 2
+          done
+          echo "backend did not become healthy"; tail -50 backend.log; exit 1
+
+      - name: Read publishable key
+        id: pk
+        run: |
+          KEY=$(PGPASSWORD=postgres psql -h localhost -U postgres -d b2b_ci -t -A -c "SELECT token FROM api_key WHERE type='publishable' LIMIT 1")
+          [ -n "$KEY" ] || { echo "no publishable key found"; exit 1; }
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Build storefront
+        run: pnpm --filter @b2b-starter/storefront build
+        env:
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${{ steps.pk.outputs.key }}
+
+      - name: Start storefront
+        run: |
+          nohup pnpm --filter @b2b-starter/storefront start > storefront.log 2>&1 &
+          for i in $(seq 1 60); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/de || true)
+            if [ "$CODE" = "200" ] || [ "$CODE" = "307" ]; then
+              echo "storefront up (HTTP $CODE) after ${i} polls"; exit 0
+            fi
+            sleep 2
+          done
+          echo "storefront did not come up"; tail -50 storefront.log; exit 1
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @b2b-starter/e2e exec playwright install --with-deps chromium
+
+      - name: Run e2e smoke tests
+        run: pnpm --filter @b2b-starter/e2e test:e2e
+        env:
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${{ steps.pk.outputs.key }}
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/e2e/playwright-report/
+            backend.log
+            storefront.log
+          retention-days: 7

@@ -51,6 +51,8 @@ An official Medusa starter for B2B ecommerce, built with [Medusa](https://medusa
 
 ## Getting Started
 
+> **Working on this fork?** See [DEVELOPMENT.md](DEVELOPMENT.md) for local setup (incl. Windows notes), the dependency-freeze policy, and branch/merge conventions.
+
 ### Deploy with Medusa Cloud
 
 The fastest way to get started is deploying with [Medusa Cloud](https://cloud.medusajs.com):

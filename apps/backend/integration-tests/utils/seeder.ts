@@ -25,6 +25,7 @@ export async function productSeeder({ api, adminHeaders, data }) {
       {
         title: `Test Product`,
         handle: `test-product`,
+        status: "published",
         options: [
           { title: "size", values: ["large", "small"] },
           { title: "color", values: ["green"] },

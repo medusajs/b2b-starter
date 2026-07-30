@@ -61,7 +61,19 @@ export const createRequestForQuoteWorkflow = createWorkflow(
         customer_id: customer.id,
         billing_address: cart.billing_address,
         shipping_address: cart.shipping_address,
-        items: cart.items,
+        // Freeze the cart's resolved prices onto the draft order explicitly:
+        // passing raw cart items makes 2.18's createOrdersWorkflow re-resolve
+        // prices in an order context, which yields null unit prices.
+        items: cart.items.map((item) => ({
+          title: item.title,
+          subtitle: item.subtitle,
+          thumbnail: item.thumbnail,
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          compare_at_unit_price: item.compare_at_unit_price,
+          metadata: item.metadata,
+        })),
         region_id: cart.region_id,
         promo_codes: cart.promotions.map(({ code }) => code),
         currency_code: cart.currency_code,

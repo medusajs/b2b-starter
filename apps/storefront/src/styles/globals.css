@@ -2,7 +2,26 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+.maxxam-bg-yellow {
+  background-color: #fec416;
+  color: black;
+}
+
+.maxxam-bg-grey {
+  background-color: #4b4b4b;
+  color: white;
+}
+
+.maxxam-logo {
+  background-image: url("/logo_full_blk.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 3rem;
+}
+
 @layer utilities {
+
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -13,16 +32,18 @@
   }
 
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
-  input:focus ~ label,
-  input:not(:placeholder-shown) ~ label {
+  input:focus~label,
+  input:not(:placeholder-shown)~label {
     @apply -translate-y-2 text-xsmall-regular;
   }
 
-  input:focus ~ label {
+  input:focus~label {
     @apply left-0;
   }
 
@@ -55,7 +76,7 @@
   }
 
   .contrast-btn {
-    @apply px-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors duration-200 ease-in;
+    @apply px-4 py-2 border border-black rounded-full hover: bg-black hover:text-white transition-colors duration-200 ease-in;
   }
 
   .text-xsmall-regular {

@@ -16,7 +16,7 @@ export default async function Footer() {
   })
 
   return (
-    <footer className="border-t border-ui-border-base w-full bg-neutral-400">
+    <footer className="border-t border-ui-border-base w-full maxxam-bg-grey">
       <div className="content-container flex flex-col w-full">
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
           <div>

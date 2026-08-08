@@ -9,8 +9,8 @@ const Hero = () => {
   return (
     <div className="h-[75vh] w-full border-b border-ui-border-base relative bg-neutral-100">
       <Image
-        src="/hero-image.jpg"
-        alt="Hero background"
+        src="/20190426_History_building.webp"
+        alt="Maxxam Building"
         layout="fill"
         quality={100}
         priority

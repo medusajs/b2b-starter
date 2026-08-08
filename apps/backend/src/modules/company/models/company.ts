@@ -20,5 +20,5 @@ export const Company = model.define("company", {
   spending_limit_reset_frequency: model
     .enum(["never", "daily", "weekly", "monthly", "yearly"])
     .default("monthly"),
-  employees: model.hasMany(() => Employee),
+  // employees: model.hasMany(() => Employee),
 });

@@ -1,6 +1,6 @@
 "use client"
 
-import { Github } from "@medusajs/icons"
+import { ArrowUpRightOnBox } from "@medusajs/icons"
 import { Heading } from "@medusajs/ui"
 import Button from "@/modules/common/components/button"
 import Image from "next/image"
@@ -18,27 +18,25 @@ const Hero = () => {
       <div className="absolute inset-0 z-1 flex flex-col justify-center items-center text-center small:p-32 gap-6">
         <span>
           <p className="text-neutral-600 text-xs uppercase">
-            Be light on your feet
+            Total IT Management
           </p>
 
           <Heading
             level="h1"
             className="text-6xl leading-10 text-ui-fg-base font-normal mt-10 mb-5"
           >
-            Portable Bestsellers
+            Your trusted IT partner since 1993
           </Heading>
 
           <p className="leading-10 text-ui-fg-subtle font-normal text-lg">
-            See our widest selection of electronics
+            We power the systems that keep your business moving — quietly, reliably, and with precision.
           </p>
         </span>
-        <a
-          href="https://github.com/medusajs/b2b-starter-medusa"
-          target="_blank"
-        >
-          <Button variant="secondary" className="rounded-2xl">
-            <Github />
-            Github Repository
+        <a href="https://www.maxxam.com.au" target="_blank">
+          <Button variant="secondary" className="rounded-xs">
+            <Image src="/favicon.webp" alt="Maxxam Logo" width={20} height={20} />
+            Maxxam Homepage
+            <ArrowUpRightOnBox />
           </Button>
         </a>
       </div>

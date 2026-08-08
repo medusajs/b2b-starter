@@ -28,7 +28,7 @@ export async function NavigationHeader() {
             >
               <h1 className="small:text-base text-sm font-medium flex items-center">
                 <LogoIcon className="inline mr-2" />
-                Medusa B2B Starter
+                Maxxam Computer Systems
               </h1>
             </LocalizedClientLink>
 

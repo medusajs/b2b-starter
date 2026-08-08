@@ -16,6 +16,9 @@ node_modules
 # Testing
 coverage
 
+# PostgeSQL
+postgres/18/**
+
 # Next.js
 **/.next/
 **/out/

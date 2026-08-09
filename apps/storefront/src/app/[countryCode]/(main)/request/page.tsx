@@ -1,7 +1,6 @@
+import PhoneNumberInput from "@/modules/layout/components/phone-input"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-// import 'react-phone-number-input/style.css'
-// import PhoneInput from 'react-phone-number-input'
 
 export const dynamicParams = true
 
@@ -78,12 +77,8 @@ export default async function RequestPage(props: Props) {
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Preferred phone number
               </label>
-              <input
-                // defaultCountry="AU"
-                // value={formData.phone}
-                // onChange={handleChange}
-                placeholder="e.g. 0491 570 006 or (03) 5550 1234"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-black focus:outline-none"
+              <PhoneNumberInput
+                phoneNumber={undefined}
               />
             </div>
 

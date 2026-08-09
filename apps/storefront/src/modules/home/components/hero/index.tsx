@@ -1,9 +1,10 @@
 "use client"
 
-import { ArrowUpRightOnBox } from "@medusajs/icons"
+import { ArrowLongRight } from "@medusajs/icons"
 import { Heading } from "@medusajs/ui"
 import Button from "@/modules/common/components/button"
 import Image from "next/image"
+import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 
 const Hero = () => {
   return (
@@ -17,7 +18,7 @@ const Hero = () => {
       />
       <div className="absolute inset-0 z-1 flex flex-col justify-center items-center text-center small:p-32 gap-6">
         <span>
-          <p className="text-neutral-600 text-xs uppercase">
+          <p className="text-neutral-600 text-md maxxam-text-grey">
             Total IT Management
           </p>
 
@@ -28,17 +29,15 @@ const Hero = () => {
             Your trusted IT partner since 1993
           </Heading>
 
-          <p className="leading-10 text-ui-fg-subtle font-normal text-lg">
+          <p className="leading-10 maxxam-text-grey font-normal text-lg">
             We power the systems that keep your business moving — quietly, reliably, and with precision.
           </p>
         </span>
-        <a href="https://www.maxxam.com.au" target="_blank">
-          <Button variant="secondary" className="rounded-xs">
-            <Image src="/favicon.webp" alt="Maxxam Logo" width={20} height={20} />
-            Maxxam Homepage
-            <ArrowUpRightOnBox />
-          </Button>
-        </a>
+
+        <LocalizedClientLink href="/store" className="maxxam-bg-grey p-4 flex items-center gap-x-2 rounded-xl txt-compact-xlarge-plus hover:maxxam-text-yellow uppercase" >
+            <Image src="/logo.svg" alt="Maxxam Logo" width={30} height={30} />
+            See our products and services <ArrowLongRight />
+        </LocalizedClientLink>
       </div>
     </div>
   )

@@ -60,10 +60,10 @@ export default async function ProductPreview({
           <div className="flex flex-row gap-1 items-center">
             <span
               className={clx({
-                "text-green-500": inventoryQuantity && inventoryQuantity > 50,
+                "text-green-500": inventoryQuantity && inventoryQuantity > 10,
                 "text-orange-500":
                   inventoryQuantity &&
-                  inventoryQuantity <= 50 &&
+                  inventoryQuantity <= 10 &&
                   inventoryQuantity > 0,
                 "text-red-500": inventoryQuantity === 0,
               })}

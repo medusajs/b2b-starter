@@ -55,7 +55,7 @@ export async function NavigationHeader() {
             </div>
 
             <div className="h-4 w-px maxxam-bg-grey" />
-            <a className="flex gap-1.5 items-center rounded-2xl bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1" href="tel:+61390095300">
+            <a className="flex gap-1.5 items-center rounded-md bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1" href="tel:+61390095300">
               <Phone />
               <span className="hidden small:inline-block">Call Us</span>
             </a>
@@ -64,7 +64,7 @@ export async function NavigationHeader() {
             {customer && cart?.items && cart.items.length > 0 ? (
               <RequestQuoteConfirmation>
                 <button
-                  className="flex gap-1.5 items-center rounded-2xl bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1"
+                  className="flex gap-1.5 items-center rounded-md bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1"
                 // disabled={isPendingApproval}
                 >
                   <FilePlus />
@@ -73,7 +73,7 @@ export async function NavigationHeader() {
               </RequestQuoteConfirmation>
             ) : (
               <RequestQuotePrompt>
-                <button className="flex gap-1.5 items-center rounded-2xl bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1">
+                <button className="flex gap-1.5 items-center rounded-md bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1">
                   <FilePlus />
                   <span className="hidden small:inline-block">Quote</span>
                 </button>

@@ -3,10 +3,10 @@ import LocalizedClientLink from "@/modules/common/components/localized-client-li
 export default function SkeletonMegaMenu() {
   return (
     <LocalizedClientLink
-      className="hover:text-ui-fg-base hover:bg-neutral-100 rounded-full px-3 py-2"
+      className="hover:text-ui-fg-base hover:bg-neutral-100 rounded-sm px-3 py-2"
       href="/store"
     >
-      Products
+      Products and Services
     </LocalizedClientLink>
   )
 }

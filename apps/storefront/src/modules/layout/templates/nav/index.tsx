@@ -13,6 +13,7 @@ import SkeletonAccountButton from "@/modules/skeletons/components/skeleton-accou
 import SkeletonCartButton from "@/modules/skeletons/components/skeleton-cart-button"
 import SkeletonMegaMenu from "@/modules/skeletons/components/skeleton-mega-menu"
 import { Suspense } from "react"
+import { Phone } from "@medusajs/icons"
 
 export async function NavigationHeader() {
   const customer = await retrieveCustomer().catch(() => null)
@@ -47,19 +48,24 @@ export async function NavigationHeader() {
               <input
                 disabled
                 type="text"
-                placeholder="Search for products"
+                placeholder="Search for products and services"
                 className="bg-gray-100 text-zinc-900 px-4 py-2 rounded-full pr-10 shadow-borders-base hidden small:inline-block hover:cursor-not-allowed"
                 title="Install a search provider to enable product search"
               />
             </div>
 
-            <div className="h-4 w-px bg-neutral-300" />
+            <div className="h-4 w-px maxxam-bg-grey" />
+            <a className="flex gap-1.5 items-center rounded-2xl bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1" href="tel:+61390095300">
+              <Phone />
+              <span className="hidden small:inline-block">Call Us</span>
+            </a>
+            <div className="h-4 w-px maxxam-bg-grey" />
 
             {customer && cart?.items && cart.items.length > 0 ? (
               <RequestQuoteConfirmation>
                 <button
                   className="flex gap-1.5 items-center rounded-2xl bg-none shadow-none border-none hover:bg-neutral-100 px-2 py-1"
-                  // disabled={isPendingApproval}
+                // disabled={isPendingApproval}
                 >
                   <FilePlus />
                   <span className="hidden small:inline-block">Quote</span>

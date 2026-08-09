@@ -94,7 +94,7 @@ const MegaMenu = ({
                   key={category.id}
                   href={`/categories/${category.handle}`}
                   className={clx(
-                    "hover:bg-neutral-100 hover:cursor-pointer rounded-full px-3 py-2 w-fit font-medium",
+                    "hover:bg-neutral-100 hover:cursor-pointer rounded-md px-3 py-2 w-100 font-medium",
                     selectedCategory === category.id && "bg-neutral-100"
                   )}
                   onMouseEnter={() => handleCategoryHover(category.id)}

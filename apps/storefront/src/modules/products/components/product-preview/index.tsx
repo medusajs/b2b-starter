@@ -48,9 +48,12 @@ export default async function ProductPreview({
           </Text>
         </div>
         <div className="flex flex-col gap-0">
-          {cheapestPrice && <PreviewPrice price={cheapestPrice} />}
-          {cheapestPrice && cheapestPrice.calculated_price.length > 0 && (
-            <Text className="text-neutral-600 text-[0.6rem]">Ex. GST</Text>
+          {cheapestPrice && (
+            <>
+              <Text className="text-neutral-600 text-xs">RRP</Text>
+              <PreviewPrice price={cheapestPrice} />
+              <Text className="text-neutral-600 text-[0.6rem]">Ex. GST</Text>
+            </>
           )}
         </div>
         <div className="flex justify-between">

@@ -4,7 +4,7 @@ import { Text, clx } from "@medusajs/ui"
 
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 import MaxxamCTA from "@/modules/layout/components/maxxam-cta"
-import { ArrowUpRightOnBox } from "@medusajs/icons"
+import { Envelope, Globe, PaperPlane } from "@medusajs/icons"
 
 export default async function Footer() {
   const { collections } = await listCollections({
@@ -120,7 +120,8 @@ export default async function Footer() {
                     rel="noreferrer"
                     className="hover:maxxam-text-yellow flex items-center gap-x-2"
                   >
-                    Email Support <ArrowUpRightOnBox />
+                    <Envelope />
+                    Email Support 
                   </a>
                 </li>
                 <li>
@@ -130,12 +131,13 @@ export default async function Footer() {
                     rel="noreferrer"
                     className="hover:maxxam-text-yellow flex items-center gap-x-2"
                   >
+                    <Globe />
                     Contact Us
-                    <ArrowUpRightOnBox />
                   </a>
                 </li>
                 <li>
-                  <LocalizedClientLink href="/request" className="hover:maxxam-text-yellow" >
+                  <LocalizedClientLink href="/request" className="flex items-center gap-x-2 hover:maxxam-text-yellow" >
+                    <PaperPlane />
                     Submit a Request
                   </LocalizedClientLink>
                 </li>

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { GeistSans } from "geist/font/sans"
 import { Metadata } from "next"
 import "@/styles/globals.css"
+import "@/styles/maxxam.css"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),

@@ -2,24 +2,6 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-.maxxam-bg-yellow {
-  background-color: #fec416;
-  color: black;
-}
-
-.maxxam-bg-grey {
-  background-color: #4b4b4b;
-  color: white;
-}
-
-.maxxam-logo {
-  background-image: url("/logo_full_blk.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  height: 3rem;
-}
-
 @layer utilities {
 
   /* Chrome, Safari and Opera */

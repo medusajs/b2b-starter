@@ -4,6 +4,7 @@ import { Text, clx } from "@medusajs/ui"
 
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 import MaxxamCTA from "@/modules/layout/components/maxxam-cta"
+import { ArrowUpRightOnBox } from "@medusajs/icons"
 
 export default async function Footer() {
   const { collections } = await listCollections({
@@ -20,7 +21,7 @@ export default async function Footer() {
       <div className="content-container flex flex-col w-full">
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
           <div>
-            <LocalizedClientLink href="/" className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase" >
+            <LocalizedClientLink href="/" className="txt-compact-xlarge-plus text-ui-fg-subtle hover:maxxam-text-yellow uppercase" >
               Maxxam Store
             </LocalizedClientLink>
           </div>
@@ -53,7 +54,7 @@ export default async function Footer() {
                       >
                         <LocalizedClientLink
                           className={clx(
-                            "hover:text-ui-fg-base",
+                            "hover:maxxam-text-yellow",
                             children && "txt-small-plus"
                           )}
                           href={`/categories/${c.handle}`}
@@ -67,7 +68,7 @@ export default async function Footer() {
                               children.map((child) => (
                                 <li key={child.id}>
                                   <LocalizedClientLink
-                                    className="hover:text-ui-fg-base"
+                                    className="hover:maxxam-text-yellow"
                                     href={`/categories/${child.handle}`}
                                     data-testid="category-link"
                                   >
@@ -99,7 +100,7 @@ export default async function Footer() {
                   {collections?.slice(0, 6).map((c) => (
                     <li key={c.id}>
                       <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
+                        className="hover:maxxam-text-yellow"
                         href={`/collections/${c.handle}`}
                       >
                         {c.title}
@@ -117,23 +118,24 @@ export default async function Footer() {
                     href="mailto:support@maxxam.com.au"
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-ui-fg-base"
+                    className="hover:maxxam-text-yellow flex items-center gap-x-2"
                   >
-                    Email Support
+                    Email Support <ArrowUpRightOnBox />
                   </a>
                 </li>
                 <li>
                   <a
-                    href="https://www.maxxam.com.au/contact-us"
+                    href="https://www.maxxam.com.au/contact"
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-ui-fg-base"
+                    className="hover:maxxam-text-yellow flex items-center gap-x-2"
                   >
                     Contact Us
+                    <ArrowUpRightOnBox />
                   </a>
                 </li>
                 <li>
-                  <LocalizedClientLink href="/request">
+                  <LocalizedClientLink href="/request" className="hover:maxxam-text-yellow" >
                     Submit a Request
                   </LocalizedClientLink>
                 </li>

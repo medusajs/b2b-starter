@@ -24,7 +24,7 @@ export async function NavigationHeader() {
         <div className="small:mx-auto flex justify-between items-center min-w-full">
           <div className="flex items-center small:space-x-4">
             <LocalizedClientLink
-              className="hover:text-ui-fg-base flex items-center w-fit"
+              className="hover:maxxam-text-yellow flex items-center w-fit"
               href="/"
             >
               <h1 className="small:text-base text-sm font-medium flex items-center">

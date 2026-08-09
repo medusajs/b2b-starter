@@ -29,7 +29,7 @@ export default function ProductPrice({
         >
           From {cheapestPrice.calculated_price}
         </Text>
-        <Text className="text-neutral-600 text-[0.6rem]">Excl. VAT</Text>
+        <Text className="text-neutral-600 text-[0.6rem]">Ex. GST</Text>
       </span>
       {cheapestPrice.price_type === "sale" && (
         <p

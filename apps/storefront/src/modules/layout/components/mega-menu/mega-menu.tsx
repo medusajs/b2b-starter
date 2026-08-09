@@ -78,13 +78,14 @@ const MegaMenu = ({
       <div
         onMouseEnter={handleMenuHover}
         onMouseLeave={handleMenuLeave}
-        className="z-50"
+        className="z-50 flex items-center gap-3"
       >
+        <div className="h-4 w-px maxxam-bg-grey" />
         <LocalizedClientLink
-          className="hover:text-ui-fg-base hover:bg-neutral-100 rounded-full px-3 py-2"
+          className="hover:text-ui-fg-base hover:bg-neutral-100 rounded-md px-3 py-2"
           href="/store"
         >
-          Products
+          Products and Services
         </LocalizedClientLink>
         {isHovered && (
           <div className="fixed left-0 right-0 top-[80px] flex gap-32 py-10 px-20 bg-white border-b border-neutral-200 ">
@@ -131,6 +132,7 @@ const MegaMenu = ({
             )}
           </div>
         )}
+      <div className="h-4 w-px maxxam-bg-grey" />
       </div>
       {isHovered && (
         <div className="fixed inset-0 mt-[60px] blur-sm backdrop-blur-sm z-[-1]" />

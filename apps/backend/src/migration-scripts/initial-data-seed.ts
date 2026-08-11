@@ -420,11 +420,11 @@ export default async function initial_data_seed({
               manage_inventory: false,
               prices: [
                 {
-                  amount: 1299,
+                  amount: 1299.0,
                   currency_code: "eur",
                 },
                 {
-                  amount: 1299,
+                  amount: 1299.0,
                   currency_code: "usd",
                 },
               ],
@@ -439,11 +439,11 @@ export default async function initial_data_seed({
               manage_inventory: false,
               prices: [
                 {
-                  amount: 1259,
+                  amount: 1259.0,
                   currency_code: "eur",
                 },
                 {
-                  amount: 1259,
+                  amount: 1259.0,
                   currency_code: "usd",
                 },
               ],

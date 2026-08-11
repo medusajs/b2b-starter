@@ -9,7 +9,7 @@ export const Employee = model.define("employee", {
     .primaryKey(),
   spending_limit: model.bigNumber().default(0),
   is_admin: model.boolean().default(false),
-  // company: model.belongsTo(() => Company, {
-  //   mappedBy: "employees",
-  // }),
+  company: model.belongsTo(() => Company, {
+    mappedBy: "employees",
+  }),
 });

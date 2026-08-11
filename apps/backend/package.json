@@ -25,17 +25,19 @@
   },
   "dependencies": {
     "@medusajs/admin-sdk": "2.18.0",
-    "@medusajs/cli": "2.18.0",
     "@medusajs/admin-shared": "2.18.0",
+    "@medusajs/cli": "2.18.0",
     "@medusajs/dashboard": "2.18.0",
     "@medusajs/framework": "2.18.0",
     "@medusajs/js-sdk": "2.18.0",
     "@medusajs/medusa": "2.18.0",
     "@medusajs/ui": "4.2.0",
-    "zod": "4.2.0",
+    "@react-email/components": "^1.0.12",
     "@tanstack/react-query": "5.64.2",
+    "react-i18next": "13.5.0",
     "react-router-dom": "6.30.4",
-    "react-i18next": "13.5.0"
+    "resend": "^6.19.0",
+    "zod": "4.2.0"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.18.0",

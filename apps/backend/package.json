@@ -19,6 +19,7 @@
     "dev": "medusa develop",
     "lint": "medusa lint",
     "clean": "rm -rf .medusa/server .medusa/admin node_modules",
+    "dev:email": "email dev --dir ./src/modules/resend/emails",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
     "test:integration:modules": "TEST_TYPE=integration:modules NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit",
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
@@ -52,6 +53,7 @@
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-email": "^6.9.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
     "vite": "^5.2.11"

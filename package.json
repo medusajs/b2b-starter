@@ -24,6 +24,10 @@
     "overrides": {
       "@types/react": "19.0.5",
       "@types/react-dom": "19.0.5"
+    },
+    "patchedDependencies": {
+      "@medusajs/framework@2.20.1": "patches/@medusajs__framework@2.20.1.patch",
+      "@medusajs/medusa@2.20.1": "patches/@medusajs__medusa@2.20.1.patch"
     }
   }
 }

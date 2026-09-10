@@ -1,0 +1,1542 @@
+diff --git a/dist/api/admin/customers/query-config.d.ts b/dist/api/admin/customers/query-config.d.ts
+index ebb451aa1dabb8e062e3d8d7cf757f906f146f62..2c49995d518082e3f3ad6a2b631cedaf215cac12 100644
+--- a/dist/api/admin/customers/query-config.d.ts
++++ b/dist/api/admin/customers/query-config.d.ts
+@@ -3,10 +3,8 @@ export declare enum Entities {
+     customer_address = "customer_address"
+ }
+ export declare const defaultAdminCustomerFields: string[];
+-export declare const allowed: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    allowed: string[];
+     isList: boolean;
+     entity: Entities;
+ };
+@@ -14,7 +12,6 @@ export declare const listTransformQueryConfig: {
+     isList: boolean;
+     entity: Entities;
+     defaults: string[];
+-    allowed: string[];
+ };
+ export declare const defaultAdminCustomerAddressFields: string[];
+ export declare const retrieveAddressTransformQueryConfig: {
+diff --git a/dist/api/admin/customers/query-config.js b/dist/api/admin/customers/query-config.js
+index b057f5d5b6ef83bd8def4e821078c1400415497e..94b372f4f63e8c94551b28f2b773296f78204fa6 100644
+--- a/dist/api/admin/customers/query-config.js
++++ b/dist/api/admin/customers/query-config.js
+@@ -1,6 +1,6 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listAddressesTransformQueryConfig = exports.retrieveAddressTransformQueryConfig = exports.defaultAdminCustomerAddressFields = exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.allowed = exports.defaultAdminCustomerFields = exports.Entities = void 0;
++exports.listAddressesTransformQueryConfig = exports.retrieveAddressTransformQueryConfig = exports.defaultAdminCustomerAddressFields = exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultAdminCustomerFields = exports.Entities = void 0;
+ var Entities;
+ (function (Entities) {
+     Entities["customer"] = "customer";
+@@ -20,25 +20,8 @@ exports.defaultAdminCustomerFields = [
+     "updated_at",
+     "deleted_at",
+ ];
+-exports.allowed = [
+-    "id",
+-    "company_name",
+-    "first_name",
+-    "last_name",
+-    "email",
+-    "phone",
+-    "metadata",
+-    "has_account",
+-    "created_by",
+-    "created_at",
+-    "updated_at",
+-    "deleted_at",
+-    "addresses",
+-    "groups",
+-];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultAdminCustomerFields,
+-    allowed: exports.allowed,
+     isList: false,
+     entity: Entities.customer,
+ };
+diff --git a/dist/api/admin/product-categories/query-config.d.ts b/dist/api/admin/product-categories/query-config.d.ts
+index 29ae72bd854038441e5e1c98ae40c1daf4093377..83c25e0ad69dab565131cd91f806023a8b9f7e9c 100644
+--- a/dist/api/admin/product-categories/query-config.d.ts
++++ b/dist/api/admin/product-categories/query-config.d.ts
+@@ -2,16 +2,13 @@ export declare enum Entities {
+     product_category = "product_category"
+ }
+ export declare const defaults: string[];
+-export declare const allowed: string[];
+ export declare const retrieveProductCategoryConfig: {
+     defaults: string[];
+-    allowed: string[];
+     isList: boolean;
+     entity: Entities;
+ };
+ export declare const listProductCategoryConfig: {
+     defaults: string[];
+-    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+     entity: Entities;
+diff --git a/dist/api/admin/product-categories/query-config.js b/dist/api/admin/product-categories/query-config.js
+index 44a0dcea01e5b29c0585ead2aad2e36d1ef7b508..755bcaf97063592f603492c1dd8d176fde448e9e 100644
+--- a/dist/api/admin/product-categories/query-config.js
++++ b/dist/api/admin/product-categories/query-config.js
+@@ -1,6 +1,6 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listProductCategoryConfig = exports.retrieveProductCategoryConfig = exports.allowed = exports.defaults = exports.Entities = void 0;
++exports.listProductCategoryConfig = exports.retrieveProductCategoryConfig = exports.defaults = exports.Entities = void 0;
+ var Entities;
+ (function (Entities) {
+     Entities["product_category"] = "product_category";
+@@ -21,33 +21,13 @@ exports.defaults = [
+     "*parent_category",
+     "*category_children",
+ ];
+-exports.allowed = [
+-    "id",
+-    "name",
+-    "description",
+-    "handle",
+-    "is_active",
+-    "is_internal",
+-    "rank",
+-    "external_id",
+-    "parent_category_id",
+-    "created_at",
+-    "updated_at",
+-    "metadata",
+-    "category_children",
+-    "parent_category",
+-    "products",
+-    "translations",
+-];
+ exports.retrieveProductCategoryConfig = {
+     defaults: exports.defaults,
+-    allowed: exports.allowed,
+     isList: false,
+     entity: Entities.product_category,
+ };
+ exports.listProductCategoryConfig = {
+     defaults: exports.defaults,
+-    allowed: exports.allowed,
+     defaultLimit: 50,
+     isList: true,
+     entity: Entities.product_category,
+diff --git a/dist/api/middlewares.js b/dist/api/middlewares.js
+index cfd5b47abf6ee249334a3e4cd038f7a3e3afd0ce..625b382f71dd4faecdae5034b927759cefeb9fbd 100644
+--- a/dist/api/middlewares.js
++++ b/dist/api/middlewares.js
+@@ -93,7 +93,6 @@ exports.default = (0, define_middlewares_1.defineMiddlewares)([
+     ...middlewares_2.adminCampaignRoutesMiddlewares,
+     ...middlewares_56.storeCartRoutesMiddlewares,
+     ...middlewares_59.storeCustomerRoutesMiddlewares,
+-    ...middlewares_56.storeCartRoutesMiddlewares,
+     ...middlewares_57.storeCollectionRoutesMiddlewares,
+     ...middlewares_64.storeProductCategoryRoutesMiddlewares,
+     ...middlewares_65.storeProductOptionRoutesMiddlewares,
+@@ -109,7 +108,6 @@ exports.default = (0, define_middlewares_1.defineMiddlewares)([
+     ...middlewares_70.storeRegionRoutesMiddlewares,
+     ...middlewares_33.adminRegionRoutesMiddlewares,
+     ...middlewares_31.adminRbacRoutesMiddlewares,
+-    ...middlewares_36.adminReturnRoutesMiddlewares,
+     ...middlewares_46.adminUserRoutesMiddlewares,
+     ...middlewares_14.adminInviteRoutesMiddlewares,
+     ...middlewares_43.adminTaxRateRoutesMiddlewares,
+diff --git a/dist/api/store/carts/query-config.d.ts b/dist/api/store/carts/query-config.d.ts
+index 628585c6d01701ee24ae190f085f6f9c49ef98ae..8f937c9518c280740bbfcf94642cfd29bb0b53f7 100644
+--- a/dist/api/store/carts/query-config.d.ts
++++ b/dist/api/store/carts/query-config.d.ts
+@@ -1,8 +1,9 @@
+ export declare const defaultStoreCartFields: string[];
++export declare const allowedStoreCartExtraFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
++    allowed: string[];
+     storeRelationsLimit: number;
+-    disallowed: (string | RegExp)[];
+     isList: boolean;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/carts/query-config.js b/dist/api/store/carts/query-config.js
+index ceab8c9b3bd916e7688b4e1a8b79a6223a7bd287..1499bb71c110a1fc5c1a58e7914bc93993e91763 100644
+--- a/dist/api/store/carts/query-config.js
++++ b/dist/api/store/carts/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.retrieveTransformQueryConfig = exports.defaultStoreCartFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.retrieveTransformQueryConfig = exports.allowedStoreCartExtraFields = exports.defaultStoreCartFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ // TODO: Global todo, review all default fields to prevent over fetching by default
+ exports.defaultStoreCartFields = [
+     "id",
+@@ -140,13 +140,97 @@ exports.defaultStoreCartFields = [
+     "*payment_collection.payment_sessions",
+     "*credit_lines",
+ ];
++exports.allowedStoreCartExtraFields = [
++    "items",
++    "region",
++    "promotions",
++    "customer",
++    "shipping_methods",
++    "shipping_address",
++    "billing_address",
++    "items.total",
++    "items.subtotal",
++    "items.tax_total",
++    "items.discount_total",
++    "items.discount_tax_total",
++    "items.original_total",
++    "items.original_subtotal",
++    "items.original_tax_total",
++    "items.item_total",
++    "items.item_subtotal",
++    "items.item_tax_total",
++    "shipping_methods.name",
++    "payment_collection.payment_sessions.data",
++    "original_subtotal",
++    "gift_card_total",
++    "gift_card_tax_total",
++    "items.cart_id",
++    "items.is_discountable",
++    "items.tax_lines",
++    "items.tax_lines.item_id",
++    "items.tax_lines.total",
++    "items.tax_lines.subtotal",
++    "items.tax_lines.tax_rate_id",
++    "items.tax_lines.created_at",
++    "items.tax_lines.updated_at",
++    "items.adjustments",
++    "items.adjustments.cart_id",
++    "items.adjustments.item_id",
++    "items.adjustments.description",
++    "items.adjustments.provider_id",
++    "items.adjustments.created_at",
++    "items.adjustments.updated_at",
++    "shipping_methods.id",
++    "shipping_methods.cart_id",
++    "shipping_methods.description",
++    "shipping_methods.data",
++    "shipping_methods.metadata",
++    "shipping_methods.original_total",
++    "shipping_methods.original_subtotal",
++    "shipping_methods.original_tax_total",
++    "shipping_methods.total",
++    "shipping_methods.subtotal",
++    "shipping_methods.tax_total",
++    "shipping_methods.discount_total",
++    "shipping_methods.discount_tax_total",
++    "shipping_methods.created_at",
++    "shipping_methods.updated_at",
++    "shipping_methods.tax_lines",
++    "shipping_methods.tax_lines.shipping_method_id",
++    "shipping_methods.tax_lines.total",
++    "shipping_methods.tax_lines.subtotal",
++    "shipping_methods.tax_lines.tax_rate_id",
++    "shipping_methods.tax_lines.created_at",
++    "shipping_methods.tax_lines.updated_at",
++    "shipping_methods.adjustments",
++    "shipping_methods.adjustments.cart_id",
++    "shipping_methods.adjustments.shipping_method_id",
++    "shipping_methods.adjustments.description",
++    "shipping_methods.adjustments.provider_id",
++    "shipping_methods.adjustments.promotion_id",
++    "shipping_methods.adjustments.created_at",
++    "shipping_methods.adjustments.updated_at",
++    "shipping_address.created_at",
++    "shipping_address.updated_at",
++    "billing_address.created_at",
++    "billing_address.updated_at",
++    "region.countries.id",
++    "payment_collection.id",
++    "payment_collection.currency_code",
++    "payment_collection.amount",
++    "payment_collection.status",
++    "payment_collection.payment_providers",
++    "payment_collection.payment_providers.id",
++    "payment_collection.payment_sessions.id",
++    "payment_collection.payment_sessions.amount",
++    "payment_collection.payment_sessions.currency_code",
++    "payment_collection.payment_sessions.provider_id",
++    "payment_collection.payment_sessions.status",
++];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreCartFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreCartFields, exports.allowedStoreCartExtraFields),
+     storeRelationsLimit: 3,
+-    // The cart legitimately exposes the caller's own customer/address/payment
+-    // data during checkout, but must not be usable to pivot into other
+-    // resources' order or cart data (e.g. region.orders, customer.orders).
+-    disallowed: disallowed_fields_1.disallowedStorePivotFields,
+     isList: false,
+ };
+ //# sourceMappingURL=query-config.js.map
+\ No newline at end of file
+diff --git a/dist/api/store/collections/query-config.d.ts b/dist/api/store/collections/query-config.d.ts
+index b7047c2b6ca046924eba5ab2a7b977e3805cb9e5..aa56202ccd132a4bf4891187519845c87dadb14b 100644
+--- a/dist/api/store/collections/query-config.d.ts
++++ b/dist/api/store/collections/query-config.d.ts
+@@ -1,13 +1,14 @@
+ export declare const defaultStoreCollectionFields: string[];
++export declare const allowedStoreCollectionExtraFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listTransformQueryConfig: {
+     defaultLimit: number;
+     isList: boolean;
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/collections/query-config.js b/dist/api/store/collections/query-config.js
+index 81b127dc31366f1e4f4c7c739ec1286a3e239d9b..5cd72b103d5c823d999780ea5c0cad7d220dbbcf 100644
+--- a/dist/api/store/collections/query-config.js
++++ b/dist/api/store/collections/query-config.js
+@@ -1,7 +1,8 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultStoreCollectionFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.allowedStoreCollectionExtraFields = exports.defaultStoreCollectionFields = void 0;
++const query_config_1 = require("../products/query-config");
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreCollectionFields = [
+     "id",
+     "title",
+@@ -10,9 +11,15 @@ exports.defaultStoreCollectionFields = [
+     "created_at",
+     "updated_at",
+ ];
++exports.allowedStoreCollectionExtraFields = [
++    "products",
++    "metadata",
++    "deleted_at",
++    ...(0, allowed_fields_1.prefixAllowedFields)("products", query_config_1.defaultStoreProductFields, query_config_1.allowedStoreProductExtraFields),
++];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreCollectionFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreCollectionFields, exports.allowedStoreCollectionExtraFields),
+     isList: false,
+ };
+ exports.listTransformQueryConfig = {
+diff --git a/dist/api/store/currencies/query-config.d.ts b/dist/api/store/currencies/query-config.d.ts
+index a7c1a0d3f8c6e0f53e839126636cb0b70cbdaf12..3870f5fa50043b57ac819d15dd623524a1df20c3 100644
+--- a/dist/api/store/currencies/query-config.d.ts
++++ b/dist/api/store/currencies/query-config.d.ts
+@@ -1,11 +1,13 @@
+ export declare const defaultStoreCurrencyFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listTransformQueryConfig: {
+     defaultLimit: number;
+     isList: boolean;
+     defaults: string[];
++    allowed: string[];
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/currencies/query-config.js b/dist/api/store/currencies/query-config.js
+index b6ea63c20b91805afa3d3d90bd4b6cd1dee17fd7..cc8a387a3155d5c74691514e2075d8851d944c4c 100644
+--- a/dist/api/store/currencies/query-config.js
++++ b/dist/api/store/currencies/query-config.js
+@@ -1,6 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultStoreCurrencyFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreCurrencyFields = [
+     "code",
+     "name",
+@@ -9,8 +10,10 @@ exports.defaultStoreCurrencyFields = [
+     "decimal_digits",
+     "rounding",
+ ];
++const additionalStoreCurrencyFields = ["created_at", "updated_at", "deleted_at"];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreCurrencyFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreCurrencyFields, additionalStoreCurrencyFields),
+     isList: false,
+ };
+ exports.listTransformQueryConfig = {
+diff --git a/dist/api/store/customers/query-config.d.ts b/dist/api/store/customers/query-config.d.ts
+index fd7b12cee7aaacce12a5c76dbf19e47e37d349f1..cd6f01c251afc6be4079f98b1e2dbd8021b4a1e8 100644
+--- a/dist/api/store/customers/query-config.d.ts
++++ b/dist/api/store/customers/query-config.d.ts
+@@ -1,16 +1,17 @@
++export declare const defaultStoreCustomerAddressFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+     allowed: string[];
+-    disallowed: (string | RegExp)[];
+     isList: boolean;
+ };
+-export declare const defaultStoreCustomerAddressFields: string[];
+ export declare const retrieveAddressTransformQueryConfig: {
+     defaults: string[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listAddressesTransformQueryConfig: {
+     isList: boolean;
+     defaults: string[];
++    allowed: string[];
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/customers/query-config.js b/dist/api/store/customers/query-config.js
+index dab972bd5c24d46d45b5af800bb8095ca158c906..f2b24a7fc0680533df250bcff92f16753a87ddfe 100644
+--- a/dist/api/store/customers/query-config.js
++++ b/dist/api/store/customers/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listAddressesTransformQueryConfig = exports.retrieveAddressTransformQueryConfig = exports.defaultStoreCustomerAddressFields = exports.retrieveTransformQueryConfig = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listAddressesTransformQueryConfig = exports.retrieveAddressTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultStoreCustomerAddressFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ const defaultStoreCustomersFields = [
+     "id",
+     "email",
+@@ -16,15 +16,6 @@ const defaultStoreCustomersFields = [
+     "updated_at",
+     "*addresses",
+ ];
+-exports.retrieveTransformQueryConfig = {
+-    defaults: defaultStoreCustomersFields,
+-    allowed: [
+-        ...defaultStoreCustomersFields.map((f) => f.replace("*", "")),
+-        "orders",
+-    ],
+-    disallowed: disallowed_fields_1.disallowedStoreCustomerFields,
+-    isList: false,
+-};
+ exports.defaultStoreCustomerAddressFields = [
+     "id",
+     "address_name",
+@@ -45,8 +36,15 @@ exports.defaultStoreCustomerAddressFields = [
+     "created_at",
+     "updated_at",
+ ];
++const nestedStoreCustomerAddressFields = (0, allowed_fields_1.prefixAllowedFields)("addresses", exports.defaultStoreCustomerAddressFields);
++exports.retrieveTransformQueryConfig = {
++    defaults: defaultStoreCustomersFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(defaultStoreCustomersFields, ["orders"], nestedStoreCustomerAddressFields),
++    isList: false,
++};
+ exports.retrieveAddressTransformQueryConfig = {
+     defaults: exports.defaultStoreCustomerAddressFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreCustomerAddressFields),
+     isList: false,
+ };
+ exports.listAddressesTransformQueryConfig = {
+diff --git a/dist/api/store/orders/query-config.d.ts b/dist/api/store/orders/query-config.d.ts
+index a31ca0066506e47de1eedb5103fd781a44c62fda..c43bab53312ce4bbb625e6af8936bb5e2c197781 100644
+--- a/dist/api/store/orders/query-config.d.ts
++++ b/dist/api/store/orders/query-config.d.ts
+@@ -1,14 +1,17 @@
+ export declare const defaultStoreOrderFields: string[];
+ export declare const defaultStoreRetrieveOrderFields: string[];
++export declare const allowedStoreOrderExtraFields: string[];
++export declare const allowedStoreOrderRetrieveExtraFields: string[];
++export declare const allowedStoreOrderListExtraFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     storeRelationsLimit: number;
+     isList: boolean;
+ };
+ export declare const listTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/orders/query-config.js b/dist/api/store/orders/query-config.js
+index 556d28285c765a22f40f1772a3fe220d640ef676..07ef8b1349b4ee3a6e977deb70b8f6d04ca7bdf2 100644
+--- a/dist/api/store/orders/query-config.js
++++ b/dist/api/store/orders/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultStoreRetrieveOrderFields = exports.defaultStoreOrderFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.allowedStoreOrderListExtraFields = exports.allowedStoreOrderRetrieveExtraFields = exports.allowedStoreOrderExtraFields = exports.defaultStoreRetrieveOrderFields = exports.defaultStoreOrderFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ // TODO: This is copied over from admin. Scope what fields and relations are allowed for store
+ exports.defaultStoreOrderFields = [
+     "id",
+@@ -64,15 +64,231 @@ exports.defaultStoreRetrieveOrderFields = [
+     "*shipping_methods.adjustments",
+     "*payment_collections",
+ ];
++exports.allowedStoreOrderExtraFields = [
++    "customer_id",
++    "sales_channel_id",
++    "payment_status",
++    "fulfillment_status",
++    "item_discount_total",
++    "gift_card_total",
++    "gift_card_tax_total",
++    "shipping_discount_total",
++    "customer.id",
++    "customer.email",
++    "cart.id",
++    "items.metadata",
++    "items.product",
++    "payment_collections.payments",
++    "payment_collections.payment_sessions",
++    "payment_collections.payment_providers",
++    "fulfillments",
++    "promotions",
++    "promotions.id",
++    "promotions.code",
++    "promotions.is_automatic",
++    "promotions.is_tax_inclusive",
++    "promotions.application_method.value",
++    "promotions.application_method.type",
++    "promotions.application_method.currency_code",
++];
++exports.allowedStoreOrderRetrieveExtraFields = [
++    "items.id",
++    "items.title",
++    "items.subtitle",
++    "items.thumbnail",
++    "items.variant_id",
++    "items.product_id",
++    "items.product_title",
++    "items.product_description",
++    "items.product_subtitle",
++    "items.product_type_id",
++    "items.product_type",
++    "items.product_collection",
++    "items.product_handle",
++    "items.variant_sku",
++    "items.variant_barcode",
++    "items.variant_title",
++    "items.variant_option_values",
++    "items.requires_shipping",
++    "items.is_discountable",
++    "items.is_tax_inclusive",
++    "items.unit_price",
++    "items.quantity",
++    "items.created_at",
++    "items.updated_at",
++    "items.original_total",
++    "items.original_subtotal",
++    "items.original_tax_total",
++    "items.item_total",
++    "items.item_subtotal",
++    "items.item_tax_total",
++    "items.total",
++    "items.subtotal",
++    "items.tax_total",
++    "items.discount_total",
++    "items.discount_tax_total",
++    "items.refundable_total",
++    "items.refundable_total_per_unit",
++    "items.detail.id",
++    "items.detail.item_id",
++    "items.detail.quantity",
++    "items.detail.fulfilled_quantity",
++    "items.detail.delivered_quantity",
++    "items.detail.shipped_quantity",
++    "items.detail.return_requested_quantity",
++    "items.detail.return_received_quantity",
++    "items.detail.return_dismissed_quantity",
++    "items.detail.written_off_quantity",
++    "items.detail.metadata",
++    "items.detail.created_at",
++    "items.detail.updated_at",
++    "items.tax_lines.id",
++    "items.tax_lines.code",
++    "items.tax_lines.rate",
++    "items.tax_lines.created_at",
++    "items.tax_lines.updated_at",
++    "items.tax_lines.item_id",
++    "items.tax_lines.total",
++    "items.tax_lines.subtotal",
++    "items.adjustments.id",
++    "items.adjustments.amount",
++    "items.adjustments.order_id",
++    "items.adjustments.created_at",
++    "items.adjustments.updated_at",
++    "items.adjustments.item_id",
++    "items.variant.id",
++    "items.variant.title",
++    "items.variant.sku",
++    "items.variant.barcode",
++    "items.variant.ean",
++    "items.variant.upc",
++    "items.variant.thumbnail",
++    "items.variant.allow_backorder",
++    "items.variant.manage_inventory",
++    "items.variant.hs_code",
++    "items.variant.origin_country",
++    "items.variant.mid_code",
++    "items.variant.material",
++    "items.variant.weight",
++    "items.variant.length",
++    "items.variant.height",
++    "items.variant.width",
++    "items.variant.created_at",
++    "items.variant.updated_at",
++    "items.variant.deleted_at",
++    "items.variant.options",
++    "items.variant.product.id",
++    "items.variant.product.title",
++    "items.variant.product.handle",
++    "items.variant.product.subtitle",
++    "items.variant.product.description",
++    "items.variant.product.is_giftcard",
++    "items.variant.product.status",
++    "items.variant.product.thumbnail",
++    "items.variant.product.width",
++    "items.variant.product.weight",
++    "items.variant.product.length",
++    "items.variant.product.height",
++    "items.variant.product.origin_country",
++    "items.variant.product.hs_code",
++    "items.variant.product.mid_code",
++    "items.variant.product.material",
++    "items.variant.product.collection_id",
++    "items.variant.product.type_id",
++    "items.variant.product.discountable",
++    "items.variant.product.external_id",
++    "items.variant.product.created_at",
++    "items.variant.product.updated_at",
++    "items.variant.product.deleted_at",
++    "items.variant.product.variants",
++    "items.variant.product.options",
++    "items.variant.product.images",
++    "shipping_address.id",
++    "shipping_address.metadata",
++    "shipping_address.created_at",
++    "shipping_address.updated_at",
++    "billing_address.id",
++    "billing_address.metadata",
++    "billing_address.created_at",
++    "billing_address.updated_at",
++    "shipping_methods.id",
++    "shipping_methods.order_id",
++    "shipping_methods.name",
++    "shipping_methods.amount",
++    "shipping_methods.is_tax_inclusive",
++    "shipping_methods.shipping_option_id",
++    "shipping_methods.data",
++    "shipping_methods.metadata",
++    "shipping_methods.original_total",
++    "shipping_methods.original_subtotal",
++    "shipping_methods.original_tax_total",
++    "shipping_methods.total",
++    "shipping_methods.subtotal",
++    "shipping_methods.tax_total",
++    "shipping_methods.discount_total",
++    "shipping_methods.discount_tax_total",
++    "shipping_methods.created_at",
++    "shipping_methods.updated_at",
++    "shipping_methods.tax_lines.id",
++    "shipping_methods.tax_lines.code",
++    "shipping_methods.tax_lines.rate",
++    "shipping_methods.tax_lines.created_at",
++    "shipping_methods.tax_lines.updated_at",
++    "shipping_methods.tax_lines.shipping_method_id",
++    "shipping_methods.tax_lines.total",
++    "shipping_methods.tax_lines.subtotal",
++    "shipping_methods.adjustments.id",
++    "shipping_methods.adjustments.amount",
++    "shipping_methods.adjustments.order_id",
++    "shipping_methods.adjustments.created_at",
++    "shipping_methods.adjustments.updated_at",
++    "shipping_methods.adjustments.shipping_method_id",
++    "payment_collections.id",
++    "payment_collections.currency_code",
++    "payment_collections.amount",
++    "payment_collections.status",
++];
++exports.allowedStoreOrderListExtraFields = [
++    ...exports.allowedStoreOrderExtraFields,
++    "email",
++    "region_id",
++    "subtotal",
++    "shipping_total",
++    "discount_total",
++    "tax_total",
++    "item_subtotal",
++    "items",
++    "items.variant",
++    "items.detail",
++    "shipping_address",
++    "billing_address",
++    "shipping_methods",
++    "payment_collections",
++    "discount_tax_total",
++    "original_total",
++    "original_subtotal",
++    "original_tax_total",
++    "item_total",
++    "item_tax_total",
++    "original_item_total",
++    "original_item_subtotal",
++    "original_item_tax_total",
++    "shipping_subtotal",
++    "shipping_tax_total",
++    "original_shipping_total",
++    "original_shipping_subtotal",
++    "original_shipping_tax_total",
++    "credit_line_total",
++];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreRetrieveOrderFields,
+-    disallowed: disallowed_fields_1.disallowedStorePivotFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreRetrieveOrderFields, exports.allowedStoreOrderExtraFields, exports.allowedStoreOrderRetrieveExtraFields),
+     storeRelationsLimit: 3,
+     isList: false,
+ };
+ exports.listTransformQueryConfig = {
+     defaults: exports.defaultStoreOrderFields,
+-    disallowed: disallowed_fields_1.disallowedStorePivotFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreOrderFields, exports.allowedStoreOrderListExtraFields),
+     isList: true,
+ };
+ //# sourceMappingURL=query-config.js.map
+\ No newline at end of file
+diff --git a/dist/api/store/payment-collections/query-config.d.ts b/dist/api/store/payment-collections/query-config.d.ts
+index ef16b8686d7a6e45137d3988f1cd0db0adc13c0f..1077b03fb24397501e0d7e05dea131513e08b117 100644
+--- a/dist/api/store/payment-collections/query-config.d.ts
++++ b/dist/api/store/payment-collections/query-config.d.ts
+@@ -1,7 +1,8 @@
+ export declare const defaultPaymentCollectionFields: string[];
++export declare const allowedStorePaymentCollectionExtraFields: string[];
+ export declare const retrievePaymentCollectionTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/payment-collections/query-config.js b/dist/api/store/payment-collections/query-config.js
+index 4ead9782da824d0fab41c1a203606f1bcd0c79e8..940d041ac279ed6e2c821662c779e4e3036a7b71 100644
+--- a/dist/api/store/payment-collections/query-config.js
++++ b/dist/api/store/payment-collections/query-config.js
+@@ -1,16 +1,27 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.retrievePaymentCollectionTransformQueryConfig = exports.defaultPaymentCollectionFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.retrievePaymentCollectionTransformQueryConfig = exports.allowedStorePaymentCollectionExtraFields = exports.defaultPaymentCollectionFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultPaymentCollectionFields = [
+     "id",
+     "currency_code",
+     "amount",
+     "*payment_sessions",
+ ];
++exports.allowedStorePaymentCollectionExtraFields = [
++    "status",
++    "payment_providers",
++    "payment_providers.id",
++    "payment_sessions.id",
++    "payment_sessions.amount",
++    "payment_sessions.currency_code",
++    "payment_sessions.provider_id",
++    "payment_sessions.data",
++    "payment_sessions.status",
++];
+ exports.retrievePaymentCollectionTransformQueryConfig = {
+     defaults: exports.defaultPaymentCollectionFields,
+-    disallowed: disallowed_fields_1.disallowedStorePivotFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultPaymentCollectionFields, exports.allowedStorePaymentCollectionExtraFields),
+     isList: false,
+ };
+ //# sourceMappingURL=query-config.js.map
+\ No newline at end of file
+diff --git a/dist/api/store/payment-providers/query-config.d.ts b/dist/api/store/payment-providers/query-config.d.ts
+index 7edc5b03bfdc7d4af516ad448788b30b42c211e9..241f8dca61e0a6c81b120b990874f5a35af1824d 100644
+--- a/dist/api/store/payment-providers/query-config.d.ts
++++ b/dist/api/store/payment-providers/query-config.d.ts
+@@ -1,7 +1,7 @@
+ export declare const defaultAdminPaymentProviderFields: string[];
+ export declare const listTransformPaymentProvidersQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/payment-providers/query-config.js b/dist/api/store/payment-providers/query-config.js
+index b959db90aee1616eca278124c275013b82799614..244dcc4bf9659828bfb01de84ec90a51440b33bc 100644
+--- a/dist/api/store/payment-providers/query-config.js
++++ b/dist/api/store/payment-providers/query-config.js
+@@ -1,11 +1,11 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.listTransformPaymentProvidersQueryConfig = exports.defaultAdminPaymentProviderFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultAdminPaymentProviderFields = ["id", "is_enabled"];
+ exports.listTransformPaymentProvidersQueryConfig = {
+     defaults: exports.defaultAdminPaymentProviderFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultAdminPaymentProviderFields),
+     isList: true,
+ };
+ //# sourceMappingURL=query-config.js.map
+\ No newline at end of file
+diff --git a/dist/api/store/product-categories/query-config.d.ts b/dist/api/store/product-categories/query-config.d.ts
+index 8dc1b92aeb524a1f0838ed830809f93f2abf0762..9cfb6e872155c8a40d969e40c8d484936b9f7f57 100644
+--- a/dist/api/store/product-categories/query-config.d.ts
++++ b/dist/api/store/product-categories/query-config.d.ts
+@@ -1,12 +1,13 @@
+ export declare const defaults: string[];
++export declare const allowedStoreProductCategoryExtraFields: string[];
+ export declare const retrieveProductCategoryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listProductCategoryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+diff --git a/dist/api/store/product-categories/query-config.js b/dist/api/store/product-categories/query-config.js
+index 77ff5e2b50013a080c00ccc8057c9be2aa38ede2..4e8e85c7c12d6d1d7b4c8ab5d920e50eecdafd1c 100644
+--- a/dist/api/store/product-categories/query-config.js
++++ b/dist/api/store/product-categories/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listProductCategoryConfig = exports.retrieveProductCategoryConfig = exports.defaults = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listProductCategoryConfig = exports.retrieveProductCategoryConfig = exports.allowedStoreProductCategoryExtraFields = exports.defaults = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaults = [
+     "id",
+     "name",
+@@ -16,14 +16,56 @@ exports.defaults = [
+     "*parent_category",
+     "*category_children",
+ ];
++const storeCategoryFields = [
++    "id",
++    "name",
++    "description",
++    "handle",
++    "rank",
++    "external_id",
++    "parent_category_id",
++    "created_at",
++    "updated_at",
++    "deleted_at",
++];
++const storeCategoryRelations = ["parent_category", "category_children"];
++/**
++ * A nested category is itself a category, so every level needs its own exact
++ * paths. Capped at the framework's default `storeRelationsLimit` of 3 — a
++ * deeper path would be rejected by `validateRelationsLimit` anyway.
++ */
++const buildNestedCategoryFields = (depth) => {
++    const paths = [];
++    let prefixes = storeCategoryRelations;
++    for (let level = 1; level <= depth; level++) {
++        if (level > 1) {
++            paths.push(...prefixes);
++        }
++        for (const prefix of prefixes) {
++            paths.push(...(0, allowed_fields_1.prefixAllowedFields)(prefix, storeCategoryFields));
++        }
++        prefixes = prefixes.flatMap((prefix) => (0, allowed_fields_1.prefixAllowedFields)(prefix, storeCategoryRelations));
++    }
++    return paths;
++};
++exports.allowedStoreProductCategoryExtraFields = [
++    "products",
++    "deleted_at",
++    "products.title",
++    "products.variants",
++    "products.options",
++    "products.images",
++    "category_children.products.title",
++    ...buildNestedCategoryFields(3),
++];
+ exports.retrieveProductCategoryConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaults, exports.allowedStoreProductCategoryExtraFields),
+     isList: false,
+ };
+ exports.listProductCategoryConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaults, exports.allowedStoreProductCategoryExtraFields),
+     defaultLimit: 50,
+     isList: true,
+ };
+diff --git a/dist/api/store/product-options/query-config.d.ts b/dist/api/store/product-options/query-config.d.ts
+index 835848712809ba0641cde94dc962ddc078af9227..aaf2d9a1e6394e28db4cb6ee1dca5cac8c5f7598 100644
+--- a/dist/api/store/product-options/query-config.d.ts
++++ b/dist/api/store/product-options/query-config.d.ts
+@@ -1,12 +1,13 @@
+ export declare const defaults: string[];
++export declare const allowedStoreProductOptionExtraFields: string[];
+ export declare const retrieveProductOptionConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listProductOptionConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+diff --git a/dist/api/store/product-options/query-config.js b/dist/api/store/product-options/query-config.js
+index 132d6e68f074d4fd3193ba525917abc2870fdecd..aa930b0b526b16aff10b33de9ad7165520ce14e8 100644
+--- a/dist/api/store/product-options/query-config.js
++++ b/dist/api/store/product-options/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listProductOptionConfig = exports.retrieveProductOptionConfig = exports.defaults = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listProductOptionConfig = exports.retrieveProductOptionConfig = exports.allowedStoreProductOptionExtraFields = exports.defaults = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaults = [
+     "id",
+     "title",
+@@ -11,14 +11,18 @@ exports.defaults = [
+     "updated_at",
+     "metadata",
+ ];
++exports.allowedStoreProductOptionExtraFields = [
++    "values.id",
++    "values.value",
++];
+ exports.retrieveProductOptionConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaults, exports.allowedStoreProductOptionExtraFields),
+     isList: false,
+ };
+ exports.listProductOptionConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaults, exports.allowedStoreProductOptionExtraFields),
+     defaultLimit: 50,
+     isList: true,
+ };
+diff --git a/dist/api/store/product-tags/query-config.d.ts b/dist/api/store/product-tags/query-config.d.ts
+index 332418400f104e912480a2bf8bf75e62343f6ef0..380b65f5f818895ab864487bcd7b005ce8ade810 100644
+--- a/dist/api/store/product-tags/query-config.d.ts
++++ b/dist/api/store/product-tags/query-config.d.ts
+@@ -1,12 +1,12 @@
+ export declare const defaults: string[];
+ export declare const retrieveProductTagConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listProductTagConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+diff --git a/dist/api/store/product-tags/query-config.js b/dist/api/store/product-tags/query-config.js
+index 3c8fd32f1e98c67e9fae4d4b921d1bcdcf15ac17..4de006b393104c162ec110943d007317563a9868 100644
+--- a/dist/api/store/product-tags/query-config.js
++++ b/dist/api/store/product-tags/query-config.js
+@@ -1,7 +1,8 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.listProductTagConfig = exports.retrieveProductTagConfig = exports.defaults = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++const query_config_1 = require("../products/query-config");
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaults = [
+     "id",
+     "value",
+@@ -11,14 +12,15 @@ exports.defaults = [
+     "metadata",
+     "*products",
+ ];
++const allowed = (0, allowed_fields_1.buildAllowedFields)(exports.defaults, (0, allowed_fields_1.prefixAllowedFields)("products", query_config_1.defaultStoreProductFields, query_config_1.allowedStoreProductExtraFields));
+ exports.retrieveProductTagConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed,
+     isList: false,
+ };
+ exports.listProductTagConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed,
+     defaultLimit: 50,
+     isList: true,
+ };
+diff --git a/dist/api/store/product-types/query-config.d.ts b/dist/api/store/product-types/query-config.d.ts
+index a109593c9c3aff2941a295dd05782e3eba73286e..669bec765056c70f5618f565d382bb945a7efd21 100644
+--- a/dist/api/store/product-types/query-config.d.ts
++++ b/dist/api/store/product-types/query-config.d.ts
+@@ -1,12 +1,12 @@
+ export declare const defaults: string[];
+ export declare const retrieveProductTypeConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listProductTypeConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+diff --git a/dist/api/store/product-types/query-config.js b/dist/api/store/product-types/query-config.js
+index 04bf6937d9e58b91e28d7f31de1128fee2b69ad0..ddc847c8520159f30fe7fe6059f6caf076e84edd 100644
+--- a/dist/api/store/product-types/query-config.js
++++ b/dist/api/store/product-types/query-config.js
+@@ -1,7 +1,8 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.listProductTypeConfig = exports.retrieveProductTypeConfig = exports.defaults = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++const query_config_1 = require("../products/query-config");
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaults = [
+     "id",
+     "value",
+@@ -11,14 +12,15 @@ exports.defaults = [
+     "metadata",
+     "*products",
+ ];
++const allowed = (0, allowed_fields_1.buildAllowedFields)(exports.defaults, (0, allowed_fields_1.prefixAllowedFields)("products", query_config_1.defaultStoreProductFields, query_config_1.allowedStoreProductExtraFields));
+ exports.retrieveProductTypeConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed,
+     isList: false,
+ };
+ exports.listProductTypeConfig = {
+     defaults: exports.defaults,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed,
+     defaultLimit: 50,
+     isList: true,
+ };
+diff --git a/dist/api/store/product-variants/query-config.d.ts b/dist/api/store/product-variants/query-config.d.ts
+index 2bfbbaf541145e21534be399ff99aea3bd4e1143..59e4374d45381dd512b4faa1dab5498b1fa30573 100644
+--- a/dist/api/store/product-variants/query-config.d.ts
++++ b/dist/api/store/product-variants/query-config.d.ts
+@@ -1,13 +1,14 @@
+ export declare const defaultStoreProductVariantFields: string[];
++export declare const allowedStoreProductVariantExtraFields: string[];
+ export declare const retrieveProductVariantConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listProductVariantConfig: {
+     defaultLimit: number;
+     isList: boolean;
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/product-variants/query-config.js b/dist/api/store/product-variants/query-config.js
+index 6c050936136a08f4fe86c403ce0cd8b839603e0f..13b887adda23a5779e4a4bb543caa95705cff01a 100644
+--- a/dist/api/store/product-variants/query-config.js
++++ b/dist/api/store/product-variants/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listProductVariantConfig = exports.retrieveProductVariantConfig = exports.defaultStoreProductVariantFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listProductVariantConfig = exports.retrieveProductVariantConfig = exports.allowedStoreProductVariantExtraFields = exports.defaultStoreProductVariantFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreProductVariantFields = [
+     "id",
+     "title",
+@@ -30,9 +30,19 @@ exports.defaultStoreProductVariantFields = [
+     "product.id",
+     "product.type_id",
+ ];
++exports.allowedStoreProductVariantExtraFields = [
++    "deleted_at",
++    "calculated_price",
++    "inventory_quantity",
++    "options.id",
++    "options.value",
++    "images.id",
++    "images.url",
++    "images.rank",
++];
+ exports.retrieveProductVariantConfig = {
+     defaults: exports.defaultStoreProductVariantFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreProductVariantFields, exports.allowedStoreProductVariantExtraFields),
+     isList: false,
+ };
+ exports.listProductVariantConfig = {
+diff --git a/dist/api/store/products/query-config.d.ts b/dist/api/store/products/query-config.d.ts
+index 701c36f0e66e84048c9f63a2b9e58d353ab2a3c1..6a39d531734c6d826a9b41a1889736ac2ea517a3 100644
+--- a/dist/api/store/products/query-config.d.ts
++++ b/dist/api/store/products/query-config.d.ts
+@@ -1,7 +1,8 @@
+ export declare const defaultStoreProductFields: string[];
++export declare const allowedStoreProductExtraFields: string[];
+ export declare const retrieveProductQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     storeRelationsLimit: number;
+     isList: boolean;
+ };
+@@ -9,7 +10,7 @@ export declare const listProductQueryConfig: {
+     defaultLimit: number;
+     isList: boolean;
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     storeRelationsLimit: number;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/products/query-config.js b/dist/api/store/products/query-config.js
+index 02b9a8eb3aa974338bfca2022ef1730bcedd9910..7fd597eca464b410df198680759053cf89a31876 100644
+--- a/dist/api/store/products/query-config.js
++++ b/dist/api/store/products/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.listProductQueryConfig = exports.retrieveProductQueryConfig = exports.defaultStoreProductFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.listProductQueryConfig = exports.retrieveProductQueryConfig = exports.allowedStoreProductExtraFields = exports.defaultStoreProductFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreProductFields = [
+     "id",
+     "title",
+@@ -32,9 +32,71 @@ exports.defaultStoreProductFields = [
+     "*variants",
+     "*variants.options",
+ ];
++exports.allowedStoreProductExtraFields = [
++    "metadata",
++    "categories",
++    "status",
++    "external_id",
++    "deleted_at",
++    "variants.calculated_price",
++    "variants.inventory_quantity",
++    "variants.manage_inventory",
++    "variants.allow_backorder",
++    "variants.images",
++    "variants.thumbnail",
++    "variants.options.option",
++    "variants.inventory_items",
++    "variants.inventory_items.inventory_item_id",
++    "variants.inventory_items.required_quantity",
++    "variants.inventory_items.inventory",
++    "variants.inventory_items.inventory.location_levels",
++    "variants.prices",
++    "variants.id",
++    "variants.title",
++    "variants.sku",
++    "variants.barcode",
++    "variants.ean",
++    "variants.upc",
++    "variants.hs_code",
++    "variants.origin_country",
++    "variants.mid_code",
++    "variants.material",
++    "variants.weight",
++    "variants.length",
++    "variants.height",
++    "variants.width",
++    "variants.created_at",
++    "variants.updated_at",
++    "variants.deleted_at",
++    "variants.options.id",
++    "variants.options.value",
++    "options.id",
++    "options.title",
++    "options.is_exclusive",
++    "options.values.id",
++    "options.values.value",
++    "images.id",
++    "images.url",
++    "images.rank",
++    "type.id",
++    "type.value",
++    "type.created_at",
++    "type.updated_at",
++    "tags.id",
++    "tags.value",
++    "tags.created_at",
++    "tags.updated_at",
++    "collection.id",
++    "collection.title",
++    "collection.handle",
++    "collection.created_at",
++    "collection.updated_at",
++    "collection.deleted_at",
++    "collection.metadata",
++];
+ exports.retrieveProductQueryConfig = {
+     defaults: exports.defaultStoreProductFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreProductFields, exports.allowedStoreProductExtraFields),
+     storeRelationsLimit: 4,
+     isList: false,
+ };
+diff --git a/dist/api/store/regions/query-config.d.ts b/dist/api/store/regions/query-config.d.ts
+index 97fe8ab92583b70f238d642c248d9fa7f1d21db0..af46e6988daa0d0328f6247d931e3e2145d0d8ec 100644
+--- a/dist/api/store/regions/query-config.d.ts
++++ b/dist/api/store/regions/query-config.d.ts
+@@ -1,12 +1,12 @@
+ export declare const defaultStoreRegionFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+diff --git a/dist/api/store/regions/query-config.js b/dist/api/store/regions/query-config.js
+index 61acb7d262dc68a896f5dba17c94fb2249f74791..0c04cc9d3a84d0b78c33672c9d715c5bf010100b 100644
+--- a/dist/api/store/regions/query-config.js
++++ b/dist/api/store/regions/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultStoreRegionFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreRegionFields = [
+     "id",
+     "name",
+@@ -12,14 +12,27 @@ exports.defaultStoreRegionFields = [
+     "metadata",
+     "*countries",
+ ];
++const nestedStoreRegionCountryFields = [
++    "countries.id",
++    "countries.iso_2",
++    "countries.iso_3",
++    "countries.num_code",
++    "countries.name",
++    "countries.display_name",
++];
++const storeRegionPaymentProviderFields = ["id", "is_enabled"];
++const nestedStoreRegionPaymentProviderFields = [
++    "payment_providers",
++    ...(0, allowed_fields_1.prefixAllowedFields)("payment_providers", storeRegionPaymentProviderFields),
++];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreRegionFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreRegionFields, nestedStoreRegionCountryFields, nestedStoreRegionPaymentProviderFields),
+     isList: false,
+ };
+ exports.listTransformQueryConfig = {
+     defaults: exports.defaultStoreRegionFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreRegionFields, nestedStoreRegionCountryFields, nestedStoreRegionPaymentProviderFields),
+     defaultLimit: 20,
+     isList: true,
+ };
+diff --git a/dist/api/store/return-reasons/query-config.d.ts b/dist/api/store/return-reasons/query-config.d.ts
+index cd5f4f2b4e708f44daa6ad7c2c52910e98e12d49..f8f3e39733c309f17e46fde48b6aba646a52f28b 100644
+--- a/dist/api/store/return-reasons/query-config.d.ts
++++ b/dist/api/store/return-reasons/query-config.d.ts
+@@ -1,12 +1,12 @@
+ export declare const defaultStoreRetrieveReturnReasonFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ export declare const listTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+diff --git a/dist/api/store/return-reasons/query-config.js b/dist/api/store/return-reasons/query-config.js
+index ad383495a9bc1a5edd03d902c199e9f5060c2af6..5855578ce1426152baa643f749b39a3c7cc40afa 100644
+--- a/dist/api/store/return-reasons/query-config.js
++++ b/dist/api/store/return-reasons/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.listTransformQueryConfig = exports.retrieveTransformQueryConfig = exports.defaultStoreRetrieveReturnReasonFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreRetrieveReturnReasonFields = [
+     "id",
+     "value",
+@@ -16,12 +16,12 @@ exports.defaultStoreRetrieveReturnReasonFields = [
+ ];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreRetrieveReturnReasonFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreRetrieveReturnReasonFields),
+     isList: false,
+ };
+ exports.listTransformQueryConfig = {
+     defaults: exports.defaultStoreRetrieveReturnReasonFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreRetrieveReturnReasonFields),
+     defaultLimit: 20,
+     isList: true,
+ };
+diff --git a/dist/api/store/returns/query-config.d.ts b/dist/api/store/returns/query-config.d.ts
+index d3f35651722884c058bcbdef2230583f271e9d51..a09f6ef2275b4925e3ec1219c67c8df957e66dd6 100644
+--- a/dist/api/store/returns/query-config.d.ts
++++ b/dist/api/store/returns/query-config.d.ts
+@@ -1,7 +1,8 @@
+ export declare const defaultReturnFields: string[];
++export declare const allowedStoreReturnExtraFields: string[];
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/returns/query-config.js b/dist/api/store/returns/query-config.js
+index 32ef2282dac1d5089379f47f86ada1fe9e1133ba..e6b3ba9db01a36e416adb85f0583d2a4010c14a7 100644
+--- a/dist/api/store/returns/query-config.js
++++ b/dist/api/store/returns/query-config.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.retrieveTransformQueryConfig = exports.defaultReturnFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.retrieveTransformQueryConfig = exports.allowedStoreReturnExtraFields = exports.defaultReturnFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultReturnFields = [
+     "id",
+     "order_id",
+@@ -10,9 +10,17 @@ exports.defaultReturnFields = [
+     "deleted_at",
+     "metadata",
+ ];
++exports.allowedStoreReturnExtraFields = [
++    "display_id",
++    "items",
++    "received_at",
++    "created_by",
++    "canceled_at",
++    "requested_at",
++];
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultReturnFields,
+-    disallowed: disallowed_fields_1.disallowedStorePivotFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultReturnFields, exports.allowedStoreReturnExtraFields),
+     isList: false,
+ };
+ //# sourceMappingURL=query-config.js.map
+\ No newline at end of file
+diff --git a/dist/api/store/shipping-options/query-config.d.ts b/dist/api/store/shipping-options/query-config.d.ts
+index 9a38bab79d16f1497fd3f578a1de346aecc4bcef..ce7b3b1221a7c7c69237ea751b5a4aefd10df320 100644
+--- a/dist/api/store/shipping-options/query-config.d.ts
++++ b/dist/api/store/shipping-options/query-config.d.ts
+@@ -1,12 +1,14 @@
+ export declare const defaultStoreShippingOptionsFields: string[];
++export declare const allowedStoreShippingOptionExtraFields: string[];
++export declare const allowedStoreShippingOptionListExtraFields: string[];
+ export declare const listTransformQueryConfig: {
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     defaultLimit: number;
+     isList: boolean;
+ };
+ export declare const retrieveTransformQueryConfig: {
+     defaults: string[];
+-    disallowed: (string | RegExp)[];
++    allowed: string[];
+     isList: boolean;
+ };
+ //# sourceMappingURL=query-config.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/shipping-options/query-config.js b/dist/api/store/shipping-options/query-config.js
+index 5ac4d54e4d6ee8e0e4617cdb21266edd83ef78a3..f023ebf6f9a26ad923c3089673f3e24ab9b8a049 100644
+--- a/dist/api/store/shipping-options/query-config.js
++++ b/dist/api/store/shipping-options/query-config.js
+@@ -1,25 +1,97 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.retrieveTransformQueryConfig = exports.listTransformQueryConfig = exports.defaultStoreShippingOptionsFields = void 0;
+-const disallowed_fields_1 = require("../utils/disallowed-fields");
++exports.retrieveTransformQueryConfig = exports.listTransformQueryConfig = exports.allowedStoreShippingOptionListExtraFields = exports.allowedStoreShippingOptionExtraFields = exports.defaultStoreShippingOptionsFields = void 0;
++const allowed_fields_1 = require("../utils/allowed-fields");
+ exports.defaultStoreShippingOptionsFields = [
+     "id",
+     "name",
+     "price_type",
+     "service_zone_id",
+     "shipping_profile_id",
+-    "fulfillment_provider_id",
++    "provider_id",
+     "shipping_option_type_id",
+     "metadata",
+ ];
++exports.allowedStoreShippingOptionExtraFields = [
++    "data",
++    "type",
++    "type.id",
++    "type.label",
++    "type.description",
++    "type.code",
++    "provider",
++    "provider.id",
++    "provider.is_enabled",
++    "prices",
++    "prices.id",
++    "prices.currency_code",
++    "prices.amount",
++    "prices.min_quantity",
++    "prices.max_quantity",
++    "prices.price_rules",
++    "prices.price_rules.id",
++    "prices.price_rules.attribute",
++    "prices.price_rules.operator",
++    "prices.price_rules.value",
++    "calculated_price",
++    "calculated_price.id",
++    "calculated_price.currency_code",
++    "calculated_price.calculated_amount",
++    "calculated_price.calculated_amount_with_tax",
++    "calculated_price.calculated_amount_without_tax",
++    "calculated_price.original_amount",
++    "calculated_price.original_amount_with_tax",
++    "calculated_price.original_amount_without_tax",
++    "calculated_price.is_calculated_price_price_list",
++    "calculated_price.is_calculated_price_tax_inclusive",
++    "calculated_price.is_original_price_price_list",
++    "calculated_price.is_original_price_tax_inclusive",
++    "calculated_price.calculated_price",
++    "calculated_price.calculated_price.id",
++    "calculated_price.calculated_price.price_list_id",
++    "calculated_price.calculated_price.price_list_type",
++    "calculated_price.calculated_price.min_quantity",
++    "calculated_price.calculated_price.max_quantity",
++    "calculated_price.original_price",
++    "calculated_price.original_price.id",
++    "calculated_price.original_price.price_list_id",
++    "calculated_price.original_price.price_list_type",
++    "calculated_price.original_price.min_quantity",
++    "calculated_price.original_price.max_quantity",
++];
++exports.allowedStoreShippingOptionListExtraFields = [
++    ...exports.allowedStoreShippingOptionExtraFields,
++    "service_zone",
++    "service_zone.id",
++    "service_zone.fulfillment_set_id",
++    "service_zone.fulfillment_set",
++    "service_zone.fulfillment_set.id",
++    "service_zone.fulfillment_set.type",
++    "service_zone.fulfillment_set.location",
++    "service_zone.fulfillment_set.location.id",
++    "service_zone.fulfillment_set.location.address",
++    "service_zone.fulfillment_set.location.address.id",
++    "service_zone.fulfillment_set.location.address.company",
++    "service_zone.fulfillment_set.location.address.address_1",
++    "service_zone.fulfillment_set.location.address.address_2",
++    "service_zone.fulfillment_set.location.address.city",
++    "service_zone.fulfillment_set.location.address.country_code",
++    "service_zone.fulfillment_set.location.address.province",
++    "service_zone.fulfillment_set.location.address.postal_code",
++    "service_zone.fulfillment_set.location.address.phone",
++    "service_zone.fulfillment_set.location.address.metadata",
++    "service_zone.fulfillment_set.location.address.created_at",
++    "service_zone.fulfillment_set.location.address.updated_at",
++    "service_zone.fulfillment_set.location.address.deleted_at",
++];
+ exports.listTransformQueryConfig = {
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreShippingOptionsFields, exports.allowedStoreShippingOptionListExtraFields),
+     defaultLimit: 20,
+     isList: true,
+ };
+ exports.retrieveTransformQueryConfig = {
+     defaults: exports.defaultStoreShippingOptionsFields,
+-    disallowed: disallowed_fields_1.disallowedStoreFields,
++    allowed: (0, allowed_fields_1.buildAllowedFields)(exports.defaultStoreShippingOptionsFields, exports.allowedStoreShippingOptionExtraFields),
+     isList: false,
+ };
+ //# sourceMappingURL=query-config.js.map
+\ No newline at end of file
+diff --git a/dist/api/store/utils/allowed-fields.d.ts b/dist/api/store/utils/allowed-fields.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..351d30603ced7181eae419250978d43c38e05225
+--- /dev/null
++++ b/dist/api/store/utils/allowed-fields.d.ts
+@@ -0,0 +1,3 @@
++export declare function buildAllowedFields(...fieldLists: string[][]): string[];
++export declare function prefixAllowedFields(prefix: string, ...fieldLists: string[][]): string[];
++//# sourceMappingURL=allowed-fields.d.ts.map
+\ No newline at end of file
+diff --git a/dist/api/store/utils/allowed-fields.js b/dist/api/store/utils/allowed-fields.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..d8444a5671ffadd5a269bc517dd1be55a1a1a569
+--- /dev/null
++++ b/dist/api/store/utils/allowed-fields.js
+@@ -0,0 +1,14 @@
++"use strict";
++Object.defineProperty(exports, "__esModule", { value: true });
++exports.buildAllowedFields = buildAllowedFields;
++exports.prefixAllowedFields = prefixAllowedFields;
++function normalizeField(field) {
++    return field.replace(/(^\*|\.\*$)/, "");
++}
++function buildAllowedFields(...fieldLists) {
++    return [...new Set(fieldLists.flat().map(normalizeField))];
++}
++function prefixAllowedFields(prefix, ...fieldLists) {
++    return buildAllowedFields(...fieldLists).map((field) => `${prefix}.${field}`);
++}
++//# sourceMappingURL=allowed-fields.js.map

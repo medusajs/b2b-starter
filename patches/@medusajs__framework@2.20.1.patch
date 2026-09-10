@@ -1,0 +1,222 @@
+diff --git a/dist/http/middlewares/allow-fields-middleware.d.ts b/dist/http/middlewares/allow-fields-middleware.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..497c3fc96e164d0102f4daa2b2e7f0a11a4579ab
+--- /dev/null
++++ b/dist/http/middlewares/allow-fields-middleware.d.ts
+@@ -0,0 +1,24 @@
++import { RequestHandler } from "express";
++/**
++ * Creates a middleware that adds fields and relations to the list of fields that
++ * can be queried through the `fields` query parameter of the routes it's applied to.
++ *
++ * Use it to expose fields that aren't part of a route's allowed fields, such as
++ * links added by a plugin or module.
++ *
++ * @param fields - The fields and relations to allow. Accepts both single fields and arrays of fields.
++ *
++ * @example
++ * import { allowFields, defineMiddlewares } from "@medusajs/framework/http"
++ *
++ * export default defineMiddlewares({
++ *   routes: [
++ *     {
++ *       matcher: "/store/products",
++ *       middlewares: [allowFields("brand", "brand.*")],
++ *     },
++ *   ],
++ * })
++ */
++export declare const allowFields: (...fields: (string | string[])[]) => RequestHandler;
++//# sourceMappingURL=allow-fields-middleware.d.ts.map
+\ No newline at end of file
+diff --git a/dist/http/middlewares/allow-fields-middleware.js b/dist/http/middlewares/allow-fields-middleware.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0db2306b4a02f6bf03d2759d2e87dc9c9469322
+--- /dev/null
++++ b/dist/http/middlewares/allow-fields-middleware.js
+@@ -0,0 +1,33 @@
++"use strict";
++Object.defineProperty(exports, "__esModule", { value: true });
++exports.allowFields = void 0;
++/**
++ * Creates a middleware that adds fields and relations to the list of fields that
++ * can be queried through the `fields` query parameter of the routes it's applied to.
++ *
++ * Use it to expose fields that aren't part of a route's allowed fields, such as
++ * links added by a plugin or module.
++ *
++ * @param fields - The fields and relations to allow. Accepts both single fields and arrays of fields.
++ *
++ * @example
++ * import { allowFields, defineMiddlewares } from "@medusajs/framework/http"
++ *
++ * export default defineMiddlewares({
++ *   routes: [
++ *     {
++ *       matcher: "/store/products",
++ *       middlewares: [allowFields("brand", "brand.*")],
++ *     },
++ *   ],
++ * })
++ */
++const allowFields = (...fields) => {
++    const fieldsToAllow = fields.flat();
++    return ((req, _res, next) => {
++        req.allowed.push(...fieldsToAllow);
++        next();
++    });
++};
++exports.allowFields = allowFields;
++//# sourceMappingURL=allow-fields-middleware.js.map
+\ No newline at end of file
+diff --git a/dist/http/middlewares/index.d.ts b/dist/http/middlewares/index.d.ts
+index eea9bf96f5c9fafc9cb514f512970f7c00b67de4..bf74c4c8c30817c0fa0ecde3abfe97ec78972c9d 100644
+--- a/dist/http/middlewares/index.d.ts
++++ b/dist/http/middlewares/index.d.ts
+@@ -1,3 +1,4 @@
++export * from "./allow-fields-middleware";
+ export * from "./apply-default-filters";
+ export * from "./apply-locale";
+ export * from "./apply-params-as-filters";
+diff --git a/dist/http/middlewares/index.js b/dist/http/middlewares/index.js
+index 0a529ef1d4a8c90c4d2949ebb4c04eb3bd8c4844..1a26107ca605ef65c3f795cbfda1f7e84c9d5b7a 100644
+--- a/dist/http/middlewares/index.js
++++ b/dist/http/middlewares/index.js
+@@ -14,6 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
+     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
++__exportStar(require("./allow-fields-middleware"), exports);
+ __exportStar(require("./apply-default-filters"), exports);
+ __exportStar(require("./apply-locale"), exports);
+ __exportStar(require("./apply-params-as-filters"), exports);
+diff --git a/dist/http/router.js b/dist/http/router.js
+index a2fcb090a8aff24a17a057fe0f0be72221abf484..22eb99160d37cefff74fda38b3f4274d73bdcdce 100644
+--- a/dist/http/router.js
++++ b/dist/http/router.js
+@@ -230,6 +230,10 @@ async function _ApiLoader_loadHttpResources() {
+         __classPrivateFieldGet(this, _ApiLoader_app, "f")[method.toLowerCase()](route.matcher, handler);
+     });
+ }, _ApiLoader_assignRestrictedFields = function _ApiLoader_assignRestrictedFields(baseRestrictedFields, storeRelationsLimit) {
++    __classPrivateFieldGet(this, _ApiLoader_app, "f").use(((req, _, next) => {
++        req.allowed = [];
++        next();
++    }));
+     __classPrivateFieldGet(this, _ApiLoader_app, "f").use("/store", ((req, _, next) => {
+         req.restrictedFields = new restricted_fields_1.RestrictedFields();
+         req.restrictedFields.add(baseRestrictedFields);
+diff --git a/dist/http/types.d.ts b/dist/http/types.d.ts
+index 0afe27aa0adc6bd00638a3e3fbb63073cc127d72..adb14cbcac04c77f1551fe2d279ef9344212af47 100644
+--- a/dist/http/types.d.ts
++++ b/dist/http/types.d.ts
+@@ -134,8 +134,13 @@ export interface MedusaRequest<Body = unknown, QueryFields = Record<string, unkn
+      * An array of fields and relations that are allowed to be queried, this can be set by the
+      * consumer as part of a middleware and it will take precedence over the req.allowed set
+      * by the api
++     *
++     * Initialized per request, so add to it with `req.allowed.push(field)` — several
++     * middlewares can each contribute that way. Reassigning the array discards what other
++     * middlewares granted. To disallow an allowed field use {@link disallowed}, which is
++     * applied after this list.
+      */
+-    allowed?: string[];
++    allowed: string[];
+     errors: string[];
+     scope: MedusaContainer;
+     session?: any;
+diff --git a/dist/http/utils/field-filtering/field-validator.d.ts b/dist/http/utils/field-filtering/field-validator.d.ts
+index 576a03b7f61d167eb734d8e8577c9b3e0299ce96..986a8ea079468568ea467ae58b2494b1e94001ef 100644
+--- a/dist/http/utils/field-filtering/field-validator.d.ts
++++ b/dist/http/utils/field-filtering/field-validator.d.ts
+@@ -2,6 +2,11 @@ import { FieldFilterContext, IFieldFilter } from "./index";
+ /**
+  * Filter that only allows explicitly specified fields
+  * Fields not in the allowed list are returned as not allowed
++ *
++ * A field is allowed only if its full path is in the allowed list as-is, both
++ * for a plain selection and for a relation selected in full (`*region`). A
++ * relation therefore never grants access to anything nested under it: `region`
++ * allows `region` alone, while `region.id` needs `region.id` to be allowed too.
+  */
+ export declare class AllowedFieldFilter implements IFieldFilter {
+     private allowed;
+diff --git a/dist/http/utils/field-filtering/field-validator.js b/dist/http/utils/field-filtering/field-validator.js
+index 83045d8d22e6c1d96d8605d126661facc4d8e68f..b608488051ec08ad65a70e5000d0dfe2145edf83 100644
+--- a/dist/http/utils/field-filtering/field-validator.js
++++ b/dist/http/utils/field-filtering/field-validator.js
+@@ -4,37 +4,21 @@ exports.DisallowedFieldFilter = exports.RestrictedFieldFilter = exports.AllowedF
+ /**
+  * Filter that only allows explicitly specified fields
+  * Fields not in the allowed list are returned as not allowed
++ *
++ * A field is allowed only if its full path is in the allowed list as-is, both
++ * for a plain selection and for a relation selected in full (`*region`). A
++ * relation therefore never grants access to anything nested under it: `region`
++ * allows `region` alone, while `region.id` needs `region.id` to be allowed too.
+  */
+ class AllowedFieldFilter {
+     constructor({ allowed }) {
+-        this.allowed = allowed;
++        this.allowed = new Set(allowed);
+     }
+     getNotAllowedFields(context) {
+         const { parsedFields } = context;
+         const { fields, starFields } = parsedFields;
+         const fieldsToCheck = [...fields, ...Array.from(starFields)];
+-        const notAllowedFields = [];
+-        fieldsToCheck.forEach((field) => {
+-            const hasAllowedField = this.allowed.includes(field);
+-            if (hasAllowedField) {
+-                return;
+-            }
+-            // Select full relation - must match an allowed field fully
+-            // e.g product.variants must have product.variants in allowedFields
+-            if (starFields.has(field)) {
+-                if (hasAllowedField) {
+-                    return;
+-                }
+-                notAllowedFields.push(field);
+-                return;
+-            }
+-            const fieldStartsWithAllowedField = this.allowed.some((allowedField) => field.startsWith(allowedField));
+-            if (!fieldStartsWithAllowedField) {
+-                notAllowedFields.push(field);
+-                return;
+-            }
+-        });
+-        return notAllowedFields;
++        return fieldsToCheck.filter((field) => !this.allowed.has(field));
+     }
+ }
+ exports.AllowedFieldFilter = AllowedFieldFilter;
+diff --git a/dist/http/utils/validate-query.js b/dist/http/utils/validate-query.js
+index 9e724d8e3754bbf4468bef5e9faa565010245a60..ed38a3d584c36371347d1079072ca2489e092c03 100644
+--- a/dist/http/utils/validate-query.js
++++ b/dist/http/utils/validate-query.js
+@@ -44,16 +44,22 @@ const getFilterableFields = (obj) => {
+     const { limit, offset, fields, order, ...result } = obj;
+     return (0, utils_1.removeUndefinedProperties)(result);
+ };
++const consumedAllowedFields = new WeakMap();
+ function validateAndTransformQuery(zodSchema, queryConfig) {
+     return async function validateQuery(req, _, next) {
+         try {
+             const restricted = req.restrictedFields?.list();
+             const allowed = [...(queryConfig.allowed ?? [])];
+-            // If any custom allowed fields are set, we add them to the allowed list along side the one configured in the query config if any
+-            if (req.allowed?.length) {
+-                allowed.push(...req.allowed);
++            // `req.allowed` is reset below so it never reaches the route handler, so the
++            // consumed value is kept off-request for a second run on the same request.
++            const customAllowed = req.allowed?.length
++                ? req.allowed
++                : consumedAllowedFields.get(req);
++            if (customAllowed?.length) {
++                allowed.push(...customAllowed);
++                consumedAllowedFields.set(req, customAllowed);
+             }
+-            delete req.allowed;
++            req.allowed = [];
+             const query = normalizeQuery(req);
+             const validated = await (0, zod_helpers_1.zodValidator)(zodSchema, query);
+             const cnf = queryConfig.isList

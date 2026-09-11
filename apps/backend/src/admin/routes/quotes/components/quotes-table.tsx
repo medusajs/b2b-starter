@@ -1,22 +1,36 @@
-import { DataTable } from "../../../../admin/components";
-import { useDataTable } from "../../../../admin/hooks";
+import {
+  DataTable,
+  DataTablePaginationState,
+  Heading,
+  useDataTable,
+} from "@medusajs/ui";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuotes } from "../../../../admin/hooks/api";
 import { useQuotesTableColumns } from "./table/columns";
-import { useQuotesTableFilters } from "./table/filters";
-import { useQuotesTableQuery } from "./table/query";
 
 const PAGE_SIZE = 50;
-const PREFIX = "quo";
 
 export const QuotesTable = () => {
-  const { searchParams, raw } = useQuotesTableQuery({
+  const navigate = useNavigate();
+  const [pagination, setPagination] = useState<DataTablePaginationState>({
+    pageIndex: 0,
     pageSize: PAGE_SIZE,
-    prefix: PREFIX,
   });
+  const [search, setSearch] = useState("");
+
+  const searchParams = useMemo(
+    () => ({
+      limit: pagination.pageSize,
+      offset: pagination.pageIndex * pagination.pageSize,
+      q: search || undefined,
+    }),
+    [pagination, search]
+  );
 
   const {
     quotes = [],
-    count,
+    count = 0,
     isPending,
   } = useQuotes({
     ...searchParams,
@@ -26,36 +40,34 @@ export const QuotesTable = () => {
   });
 
   const columns = useQuotesTableColumns();
-  const filters = useQuotesTableFilters();
 
-  const { table } = useDataTable({
+  const table = useDataTable({
     data: quotes,
     columns,
-    enablePagination: true,
-    count,
-    pageSize: PAGE_SIZE,
+    rowCount: count,
+    getRowId: (row) => row.id,
+    isLoading: isPending,
+    pagination: { state: pagination, onPaginationChange: setPagination },
+    search: { state: search, onSearchChange: setSearch },
+    onRowClick: (_event, row) => navigate(`/quotes/${row.id}`),
   });
 
   return (
-    <div className="flex size-full flex-col overflow-hidden">
-      <DataTable
-        columns={columns}
-        table={table}
-        pagination
-        navigateTo={(row) => `/quotes/${row.original.id}`}
-        filters={filters}
-        count={count}
-        search
-        isLoading={isPending}
-        pageSize={PAGE_SIZE}
-        orderBy={["id", "created_at"]}
-        queryObject={raw}
-        noRecords={{
-          title: "No quotes found",
-          message:
-            "There are currently no quotes. Create one from the storefront.",
+    <DataTable instance={table}>
+      <DataTable.Toolbar className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
+        <Heading>Quotes</Heading>
+        <DataTable.Search placeholder="Search..." />
+      </DataTable.Toolbar>
+      <DataTable.Table
+        emptyState={{
+          empty: {
+            heading: "No quotes found",
+            description:
+              "There are currently no quotes. Create one from the storefront.",
+          },
         }}
       />
-    </div>
+      <DataTable.Pagination />
+    </DataTable>
   );
 };

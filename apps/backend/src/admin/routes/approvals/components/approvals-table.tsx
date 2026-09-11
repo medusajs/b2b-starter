@@ -1,16 +1,34 @@
-import { DataTable } from "../../../../admin/components";
-import { useDataTable } from "../../../../admin/hooks";
+import {
+  DataTable,
+  DataTableFilteringState,
+  DataTablePaginationState,
+  Heading,
+  useDataTable,
+} from "@medusajs/ui";
+import { useMemo, useState } from "react";
 import { useApprovals } from "../../../../admin/hooks/api";
 import { useApprovalsTableColumns } from "./table/columns";
 import { useApprovalsTableFilters } from "./table/filters";
-import { useApprovalsTableQuery } from "./table/query";
 
 const PAGE_SIZE = 50;
 
 export const ApprovalsTable = () => {
-  const { searchParams, raw } = useApprovalsTableQuery({
+  const [pagination, setPagination] = useState<DataTablePaginationState>({
+    pageIndex: 0,
     pageSize: PAGE_SIZE,
   });
+  const [filtering, setFiltering] = useState<DataTableFilteringState>({});
+  const [search, setSearch] = useState("");
+
+  const searchParams = useMemo(
+    () => ({
+      limit: pagination.pageSize,
+      offset: pagination.pageIndex * pagination.pageSize,
+      q: search || undefined,
+      ...filtering,
+    }),
+    [pagination, search, filtering]
+  );
 
   const { data, isPending } = useApprovals({
     ...searchParams,
@@ -20,32 +38,36 @@ export const ApprovalsTable = () => {
   const columns = useApprovalsTableColumns();
   const filters = useApprovalsTableFilters();
 
-  const { table } = useDataTable({
-    data: data?.carts_with_approvals,
+  const table = useDataTable({
+    data: data?.carts_with_approvals ?? [],
     columns,
-    enablePagination: true,
-    count: data?.count,
-    pageSize: PAGE_SIZE,
+    filters,
+    rowCount: data?.count ?? 0,
+    getRowId: (row) => row.id,
+    isLoading: isPending,
+    pagination: { state: pagination, onPaginationChange: setPagination },
+    filtering: { state: filtering, onFilteringChange: setFiltering },
+    search: { state: search, onSearchChange: setSearch },
   });
 
   return (
-    <div className="flex size-full flex-col overflow-hidden">
-      <DataTable
-        columns={columns}
-        table={table}
-        pagination
-        filters={filters}
-        count={data?.count}
-        search
-        isLoading={isPending}
-        pageSize={PAGE_SIZE}
-        orderBy={["id", "created_at"]}
-        queryObject={raw}
-        noRecords={{
-          title: "No approvals found",
-          message: "There are currently no approvals.",
+    <DataTable instance={table}>
+      <DataTable.Toolbar className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
+        <Heading>Approvals</Heading>
+        <div className="flex gap-2">
+          <DataTable.FilterMenu tooltip="Filter" />
+          <DataTable.Search placeholder="Search..." />
+        </div>
+      </DataTable.Toolbar>
+      <DataTable.Table
+        emptyState={{
+          empty: {
+            heading: "No approvals found",
+            description: "There are currently no approvals.",
+          },
         }}
       />
-    </div>
+      <DataTable.Pagination />
+    </DataTable>
   );
 };

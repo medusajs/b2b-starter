@@ -1,18 +1,16 @@
+import { createDataTableFilterHelper } from "@medusajs/ui";
 import { ApprovalStatusType } from "../../../../../types/approval";
 
-export const useApprovalsTableFilters = () => {
-  const filters: any[] = [
-    {
-      label: "Status",
-      key: "status",
-      type: "select",
-      options: [
-        { label: "Pending", value: ApprovalStatusType.PENDING },
-        { label: "Approved", value: ApprovalStatusType.APPROVED },
-        { label: "Rejected", value: ApprovalStatusType.REJECTED },
-      ],
-    },
-  ];
+const filterHelper = createDataTableFilterHelper<any>();
 
-  return filters;
-};
+export const useApprovalsTableFilters = () => [
+  filterHelper.accessor("status", {
+    label: "Status",
+    type: "select",
+    options: [
+      { label: "Pending", value: ApprovalStatusType.PENDING },
+      { label: "Approved", value: ApprovalStatusType.APPROVED },
+      { label: "Rejected", value: ApprovalStatusType.REJECTED },
+    ],
+  }),
+];

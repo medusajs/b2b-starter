@@ -2,7 +2,7 @@ import { Prompt } from "@medusajs/ui";
 import { PropsWithChildren } from "react";
 import { FieldValues, UseFormReturn } from "react-hook-form";
 import { useBlocker } from "react-router-dom";
-import { Form } from "../../form";
+import { Form } from "@medusajs/dashboard/components";
 
 type RouteModalFormProps<TFieldValues extends FieldValues> = PropsWithChildren<{
   form: UseFormReturn<TFieldValues>;

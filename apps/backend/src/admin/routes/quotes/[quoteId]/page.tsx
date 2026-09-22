@@ -1,3 +1,4 @@
+import { JsonViewSection } from "@medusajs/dashboard/components";
 import { CheckCircleSolid } from "@medusajs/icons";
 import {
   Button,
@@ -11,7 +12,6 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { JsonViewSection } from "../../../components/common/json-view-section";
 import { useOrderPreview } from "../../../hooks/api";
 import {
   useQuote,

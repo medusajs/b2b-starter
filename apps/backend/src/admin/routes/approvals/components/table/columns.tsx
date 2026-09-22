@@ -1,14 +1,13 @@
-import { createColumnHelper } from "@tanstack/react-table";
+import { StatusBadge, createDataTableColumnHelper } from "@medusajs/ui";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { TextCell } from "../../../../components/common/table/table-cells/text-cell";
-import { StatusBadge } from "@medusajs/ui";
-import { ApprovalStatusType } from "../../../../../types/approval";
-import ItemsPopover from "../approvals-items-popover";
 import { DateCell } from "../../../../../admin/components/common/table/table-cells/date-cell";
+import { ApprovalStatusType } from "../../../../../types/approval";
+import { TextCell } from "../../../../components/common/table/table-cells/text-cell";
 import { ApprovalActions } from "../approval-actions";
+import ItemsPopover from "../approvals-items-popover";
 
-const columnHelper = createColumnHelper<any>();
+const columnHelper = createDataTableColumnHelper<any>();
 
 export const useApprovalsTableColumns = () => {
   const { t } = useTranslation();
@@ -55,7 +54,8 @@ export const useApprovalsTableColumns = () => {
           />
         ),
       }),
-      columnHelper.accessor("actions", {
+      columnHelper.display({
+        id: "actions",
         header: t("Actions"),
         cell: ({ row }) => <ApprovalActions cart={row.original} />,
       }),

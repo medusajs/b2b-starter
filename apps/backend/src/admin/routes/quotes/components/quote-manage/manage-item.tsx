@@ -21,7 +21,7 @@ import {
   AmountCell,
   Thumbnail,
 } from "../../../../components/common";
-import { Form } from "../../../../components/common/form";
+import { Form } from "@medusajs/dashboard/components";
 import {
   useAddItemsToQuote,
   useRemoveQuoteItem,

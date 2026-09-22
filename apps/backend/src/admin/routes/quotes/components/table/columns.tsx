@@ -1,11 +1,11 @@
-import { createColumnHelper } from "@tanstack/react-table";
+import { createDataTableColumnHelper } from "@medusajs/ui";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { DateCell } from "../../../../components/common/table/table-cells/date-cell";
 import { TextCell } from "../../../../components/common/table/table-cells/text-cell";
 import QuoteStatusBadge from "../quote-status-badge";
 
-const columnHelper = createColumnHelper<any>();
+const columnHelper = createDataTableColumnHelper<any>();
 
 export const useQuotesTableColumns = () => {
   const { t } = useTranslation();
@@ -30,13 +30,12 @@ export const useQuotesTableColumns = () => {
       }),
       columnHelper.accessor("draft_order.total", {
         header: t("fields.total"),
-        cell: ({ getValue, row }) => {
+        cell: ({ getValue, row }) => (
           <TextCell
             text={`${row.original.draft_order.currency_code.toUpperCase()} ${getValue()}`}
-          />;
-        },
+          />
+        ),
       }),
-
       columnHelper.accessor("created_at", {
         header: t("fields.createdAt"),
         cell: ({ getValue }) => <DateCell date={getValue()} />,

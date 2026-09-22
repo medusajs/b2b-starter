@@ -1,59 +1,24 @@
-import { Checkbox } from "@medusajs/ui";
-import { createColumnHelper } from "@tanstack/react-table";
+import { createDataTableColumnHelper } from "@medusajs/ui";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ProductCell, ProductHeader } from "../../../../../components";
 
-const columnHelper = createColumnHelper<any>();
+const columnHelper = createDataTableColumnHelper<any>();
 
 export const useManageItemsTableColumns = (currencyCode: string) => {
   const { t } = useTranslation();
 
   return useMemo(
     () => [
-      columnHelper.display({
-        id: "select",
-        header: ({ table }) => {
-          return (
-            <Checkbox
-              checked={
-                table.getIsSomePageRowsSelected()
-                  ? "indeterminate"
-                  : table.getIsAllPageRowsSelected()
-              }
-              onCheckedChange={(value) =>
-                table.toggleAllPageRowsSelected(!!value)
-              }
-            />
-          );
-        },
-        cell: ({ row }) => {
-          const isSelectable = row.getCanSelect();
-
-          return (
-            <Checkbox
-              disabled={!isSelectable}
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            />
-          );
-        },
-      }),
+      columnHelper.select(),
       columnHelper.display({
         id: "product",
         header: () => <ProductHeader />,
-        cell: ({ row }) => {
-          return <ProductCell product={row.original.product} />;
-        },
+        cell: ({ row }) => <ProductCell product={row.original.product} />,
       }),
       columnHelper.accessor("sku", {
         header: t("fields.sku"),
-        cell: ({ getValue }) => {
-          return getValue() || "-";
-        },
+        cell: ({ getValue }) => getValue() || "-",
       }),
       columnHelper.accessor("title", {
         header: t("fields.title"),

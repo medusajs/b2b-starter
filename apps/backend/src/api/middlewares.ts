@@ -1,8 +1,4 @@
-import {
-  MedusaNextFunction,
-  MedusaRequest,
-  MedusaResponse,
-} from "@medusajs/framework";
+import { allowFields } from "@medusajs/framework/http";
 import { defineMiddlewares } from "@medusajs/medusa";
 import { adminMiddlewares } from "./admin/middlewares";
 import { storeMiddlewares } from "./store/middlewares";
@@ -13,11 +9,17 @@ export default defineMiddlewares({
     ...storeMiddlewares,
     {
       matcher: "/store/customers/me",
+      middlewares: [allowFields("employee")],
+    },
+    {
+      matcher: "/store/carts",
       middlewares: [
-        (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
-          req.allowed = ["employee"];
-          next();
-        },
+        allowFields(
+          "company",
+          "company.approval_settings",
+          "approvals",
+          "approval_status"
+        ),
       ],
     },
   ],

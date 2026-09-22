@@ -1,14 +1,14 @@
-import { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
-import { useState } from "react";
-import { DataTable } from "../../../../components";
+import {
+  DataTable,
+  DataTablePaginationState,
+  DataTableRowSelectionState,
+  useDataTable,
+} from "@medusajs/ui";
+import { useMemo, useState } from "react";
 import { useVariants } from "../../../../hooks/api";
-import { useDataTable } from "../../../../hooks/use-data-table";
 import { useManageItemsTableColumns } from "./table/columns";
-import { useManageItemsTableFilters } from "./table/filters";
-import { useManageItemsTableQuery } from "./table/query";
 
 const PAGE_SIZE = 50;
-const PREFIX = "rit";
 
 type ManageItemsTableProps = {
   onSelectionChange: (ids: string[]) => void;
@@ -19,58 +19,59 @@ export const ManageItemsTable = ({
   onSelectionChange,
   currencyCode,
 }: ManageItemsTableProps) => {
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-
-  const updater: OnChangeFn<RowSelectionState> = (fn) => {
-    const newState: RowSelectionState =
-      typeof fn === "function" ? fn(rowSelection) : fn;
-
-    setRowSelection(newState);
-    onSelectionChange(Object.keys(newState));
-  };
-
-  const { searchParams, raw } = useManageItemsTableQuery({
+  const [rowSelection, setRowSelection] = useState<DataTableRowSelectionState>(
+    {}
+  );
+  const [pagination, setPagination] = useState<DataTablePaginationState>({
+    pageIndex: 0,
     pageSize: PAGE_SIZE,
-    prefix: PREFIX,
   });
+  const [search, setSearch] = useState("");
 
-  const { variants = [], count } = useVariants({
+  const searchParams = useMemo(
+    () => ({
+      limit: pagination.pageSize,
+      offset: pagination.pageIndex * pagination.pageSize,
+      q: search || undefined,
+    }),
+    [pagination, search]
+  );
+
+  const {
+    variants = [],
+    count = 0,
+    isPending,
+  } = useVariants({
     ...searchParams,
     fields: "*inventory_items.inventory.location_levels,+inventory_quantity",
   });
 
   const columns = useManageItemsTableColumns(currencyCode);
-  const filters = useManageItemsTableFilters();
 
-  const { table } = useDataTable({
+  const table = useDataTable({
     data: variants,
-    columns: columns,
-    count,
-    enablePagination: true,
+    columns,
+    rowCount: count,
     getRowId: (row) => row.id,
-    pageSize: PAGE_SIZE,
-    enableRowSelection: (row) => true,
+    isLoading: isPending,
+    pagination: { state: pagination, onPaginationChange: setPagination },
+    search: { state: search, onSearchChange: setSearch },
     rowSelection: {
       state: rowSelection,
-      updater,
+      onRowSelectionChange: (state) => {
+        setRowSelection(state);
+        onSelectionChange(Object.keys(state));
+      },
     },
   });
 
   return (
-    <div className="flex size-full flex-col overflow-hidden">
-      <DataTable
-        table={table}
-        columns={columns}
-        pageSize={PAGE_SIZE}
-        count={count}
-        filters={filters}
-        pagination
-        layout="fill"
-        search
-        orderBy={["product_id", "title", "sku"]}
-        prefix={PREFIX}
-        queryObject={raw}
-      />
-    </div>
+    <DataTable instance={table}>
+      <DataTable.Toolbar className="flex justify-end">
+        <DataTable.Search placeholder="Search..." />
+      </DataTable.Toolbar>
+      <DataTable.Table />
+      <DataTable.Pagination />
+    </DataTable>
   );
 };

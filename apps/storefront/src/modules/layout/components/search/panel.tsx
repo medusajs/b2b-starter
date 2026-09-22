@@ -16,7 +16,13 @@ import SearchHit, { ProductHit } from "./hit"
 
 const DEBOUNCE_MS = 250
 
-const SearchPanel = ({ onNavigate }: { onNavigate: () => void }) => {
+const SearchPanel = ({
+  currencyCode,
+  onNavigate,
+}: {
+  currencyCode: string
+  onNavigate: () => void
+}) => {
   const timer = useRef<number | undefined>(undefined)
 
   const queryHook = useCallback(
@@ -29,7 +35,7 @@ const SearchPanel = ({ onNavigate }: { onNavigate: () => void }) => {
 
   const { query, refine } = useSearchBox({ queryHook })
   const { items, isLastPage, showMore } = useInfiniteHits<ProductHit>()
-  const { status, error } = useInstantSearch()
+  const { status, error, results } = useInstantSearch()
   const { isSettled } = useSearchSettled()
 
   const [inputValue, setInputValue] = useState(query)
@@ -51,7 +57,13 @@ const SearchPanel = ({ onNavigate }: { onNavigate: () => void }) => {
   // True while the debounce timer is still pending, so the UI reads as busy
   // before InstantSearch itself does.
   const isPending = inputValue.trim() !== query.trim()
-  const hasResults = items.length > 0
+  // The empty query InstantSearch fires on mount matches every product, and
+  // those hits stay in `items` until the next response lands — so hits are only
+  // this query's once the results come back carrying it.
+  const hasResults =
+    Boolean(query.trim()) &&
+    (results?.query ?? "").trim() === query.trim() &&
+    items.length > 0
   const errorStatus = (error as unknown as { status?: number } | undefined)
     ?.status
 
@@ -114,7 +126,12 @@ const SearchPanel = ({ onNavigate }: { onNavigate: () => void }) => {
       <div className="flex flex-col gap-y-4">
         <ul className="flex flex-col" data-testid="search-results">
           {items.map((hit) => (
-            <SearchHit key={hit.objectID} hit={hit} onNavigate={onNavigate} />
+            <SearchHit
+              key={hit.objectID}
+              hit={hit}
+              currencyCode={currencyCode}
+              onNavigate={onNavigate}
+            />
           ))}
         </ul>
 

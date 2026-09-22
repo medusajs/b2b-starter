@@ -1,6 +1,7 @@
 import { retrieveCart } from "@/lib/data/cart"
 import { retrieveCustomer } from "@/lib/data/customer"
 import { listCartFreeShippingPrices } from "@/lib/data/fulfillment"
+import { getRegion } from "@/lib/data/regions"
 import { getBaseURL } from "@/lib/util/env"
 import CartMismatchBanner from "@/modules/layout/components/cart-mismatch-banner"
 import Footer from "@/modules/layout/templates/footer"
@@ -15,9 +16,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
 
-export default async function PageLayout(props: { children: React.ReactNode }) {
+export default async function PageLayout(props: {
+  children: React.ReactNode
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
   const customer = await retrieveCustomer().catch(() => null)
   const cart = await retrieveCart()
+  const region = await getRegion(countryCode)
   let freeShippingPrices: StoreFreeShippingPrice[] = []
 
   if (cart) {
@@ -26,7 +32,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <>
-      <NavigationHeader />
+      <NavigationHeader currencyCode={region?.currency_code} />
       <div className="flex items-center text-neutral-50 justify-center small:p-4 p-2 text-center bg-neutral-900 small:gap-2 gap-1 text-sm">
         <div className="flex flex-col small:flex-row small:gap-2 gap-1 items-center">
           <span className="flex items-center gap-1">

@@ -20,16 +20,18 @@ const LABELS_ATTRIBUTE = "labels"
  * returns for an empty query. Product search lives in the navbar drawer.
  *
  * Every field here is declared `facetable()` on the product search index —
- * `category`, `labels` and `option_values` as value facets, `min_price` as a
- * stats facet, and `on_sale` as a boolean.
+ * `category`, `labels` and `option_values` as value facets, `min_price_<currency>`
+ * as a stats facet, and `on_sale_<currency>` as a boolean. The price facets are
+ * per currency, so the region's currency picks which set is refined on.
  *
- * Nothing that protects data belongs here. The published-status filter is
- * applied by the `/store/search` route, where the client cannot drop it.
+ * Nothing that protects data belongs here. The published-status and sales
+ * channel filters are applied by the core `/store/search` route, where the
+ * client cannot drop them.
  */
-const SearchRefinements = () => (
+const SearchRefinements = ({ currencyCode }: { currencyCode: string }) => (
   <div className="flex flex-col divide-neutral-200 small:w-1/5 w-full gap-3">
     <Container className="p-0 w-full">
-      <SortSelect />
+      <SortSelect currencyCode={currencyCode} />
     </Container>
 
     <Container className="p-0">
@@ -43,8 +45,8 @@ const SearchRefinements = () => (
         ]}
         className="divide-y divide-neutral-200"
       >
-        <PriceRangeFacet />
-        <OnSaleFacet />
+        <PriceRangeFacet currencyCode={currencyCode} />
+        <OnSaleFacet currencyCode={currencyCode} />
         <CheckboxFacet attribute={CATEGORY_ATTRIBUTE} title="Categories" />
         <OptionValuesFacet />
         <CheckboxFacet attribute={LABELS_ATTRIBUTE} title="Labels" />

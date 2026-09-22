@@ -1,12 +1,14 @@
 "use client"
 
+import { indexedCurrency, priceAttribute } from "@/lib/search-client"
 import { convertToLocale } from "@/lib/util/money"
 import { Text } from "@medusajs/ui"
 import { useEffect, useRef, useState } from "react"
-import { useInstantSearch, useRange } from "react-instantsearch"
+import { useRange } from "react-instantsearch"
 
 import FacetSection from "./facet-section"
 
+/** Only used to key the accordion section — the facet itself is per currency. */
 export const PRICE_ATTRIBUTE = "min_price"
 
 /** The slider moves in whole currency units. */
@@ -21,11 +23,10 @@ const isNumber = (value: unknown): value is number =>
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max)
 
-const PriceRangeFacet = () => {
-  const { start, range, refine } = useRange({ attribute: PRICE_ATTRIBUTE })
-  // Read straight off the results rather than through `useHits`, which would
-  // register a second hits widget just to learn the currency.
-  const { results } = useInstantSearch()
+const PriceRangeFacet = ({ currencyCode }: { currencyCode: string }) => {
+  const { start, range, refine } = useRange({
+    attribute: priceAttribute("min_price", currencyCode),
+  })
 
   const minInputRef = useRef<HTMLInputElement>(null)
   const maxInputRef = useRef<HTMLInputElement>(null)
@@ -100,31 +101,29 @@ const PriceRangeFacet = () => {
     )
   }
 
-  const currencyCode = (
-    results?.hits as { currency_code?: string | null }[] | undefined
-  )?.find((hit) => hit.currency_code)?.currency_code
-
   const format = (amount: number) =>
-    currencyCode
-      ? convertToLocale({ amount, currency_code: currencyCode })
-      : String(amount)
+    convertToLocale({
+      amount,
+      currency_code: indexedCurrency(currencyCode),
+    })
 
   const ratio = (value: number) => (value - min) / (max - min)
 
   const thumbCenter = (value: number) =>
     `calc(${ratio(value) * 100}% + ${(0.5 - ratio(value)) * THUMB_SIZE}px)`
 
-  const onInput = (index: 0 | 1) => (event: React.FormEvent<HTMLInputElement>) => {
-    const value = Number(event.currentTarget.value)
+  const onInput =
+    (index: 0 | 1) => (event: React.FormEvent<HTMLInputElement>) => {
+      const value = Number(event.currentTarget.value)
 
-    setDragging((previous) => {
-      const [low, high] = previous ?? refined
+      setDragging((previous) => {
+        const [low, high] = previous ?? refined
 
-      return index === 0
-        ? [Math.min(value, high), high]
-        : [low, Math.max(value, low)]
-    })
-  }
+        return index === 0
+          ? [Math.min(value, high), high]
+          : [low, Math.max(value, low)]
+      })
+    }
 
   const inputProps = {
     type: "range" as const,

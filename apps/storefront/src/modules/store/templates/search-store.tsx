@@ -10,7 +10,7 @@ import { Configure, InstantSearch } from "react-instantsearch"
 
 const HITS_PER_PAGE = 12
 
-const SearchStoreTemplate = () => (
+const SearchStoreTemplate = ({ currencyCode }: { currencyCode: string }) => (
   <div className="bg-neutral-100">
     <div
       className="flex flex-col py-6 content-container gap-4"
@@ -27,10 +27,10 @@ const SearchStoreTemplate = () => (
         <Configure hitsPerPage={HITS_PER_PAGE} />
 
         <div className="flex flex-col small:flex-row small:items-start gap-3">
-          <SearchRefinements />
+          <SearchRefinements currencyCode={currencyCode} />
           <div className="w-full flex flex-col gap-3">
-            <AppliedRefinements />
-            <SearchResults />
+            <AppliedRefinements currencyCode={currencyCode} />
+            <SearchResults currencyCode={currencyCode} />
           </div>
         </div>
       </InstantSearch>

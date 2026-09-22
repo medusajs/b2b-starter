@@ -24,13 +24,13 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
-    "@medusajs/admin-sdk": "2.20.0-snapshot-20260828124434",
-    "@medusajs/admin-shared": "2.20.0-snapshot-20260828124434",
-    "@medusajs/cli": "2.20.0-snapshot-20260828124434",
-    "@medusajs/dashboard": "2.20.0-snapshot-20260828124434",
-    "@medusajs/framework": "2.20.0-snapshot-20260828124434",
-    "@medusajs/js-sdk": "2.20.0-snapshot-20260828124434",
-    "@medusajs/medusa": "2.20.0-snapshot-20260828124434",
+    "@medusajs/admin-sdk": "2.21.1-preview-20260922104932",
+    "@medusajs/admin-shared": "2.21.1-preview-20260922104932",
+    "@medusajs/cli": "2.21.1-preview-20260922104932",
+    "@medusajs/dashboard": "2.21.1-preview-20260922104932",
+    "@medusajs/framework": "2.21.1-preview-20260922104932",
+    "@medusajs/js-sdk": "2.21.1-preview-20260922104932",
+    "@medusajs/medusa": "2.21.1-preview-20260922104932",
     "@medusajs/ui": "4.2.1",
     "@tanstack/react-query": "5.64.2",
     "react-i18next": "13.5.0",
@@ -38,8 +38,8 @@
     "zod": "4.2.0"
   },
   "devDependencies": {
-    "@medusajs/test-utils": "2.20.0-snapshot-20260828124434",
-    "@medusajs/ui-preset": "2.20.0-snapshot-20260828124434",
+    "@medusajs/test-utils": "2.21.1-preview-20260922104932",
+    "@medusajs/ui-preset": "2.21.1-preview-20260922104932",
     "@swc/core": "^1.5.7",
     "@swc/jest": "^0.2.36",
     "@types/jest": "^29.5.14",

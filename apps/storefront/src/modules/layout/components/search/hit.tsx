@@ -1,39 +1,67 @@
 "use client"
 
+import { indexedCurrency, priceAttribute } from "@/lib/search-client"
 import { convertToLocale } from "@/lib/util/money"
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
 import Thumbnail from "@/modules/products/components/thumbnail"
 import { Text, clx } from "@medusajs/ui"
 import type { Hit as HitType } from "instantsearch.js"
 
-export type ProductHit = HitType<{
-  title: string | null
-  handle: string | null
-  thumbnail: string | null
-  currency_code?: string | null
-  min_price?: number | null
-  original_price?: number | null
-  on_sale?: boolean | null
-  discount_percentage?: number | null
-}>
+/**
+ * The price fields are per currency, e.g. `min_price_eur`, so they're read
+ * through `priceAttribute` rather than declared one by one.
+ */
+export type ProductHit = HitType<
+  {
+    title: string | null
+    handle: string | null
+    thumbnail: string | null
+  } & Record<string, unknown>
+>
+
+const amount = (value: unknown) => (typeof value === "number" ? value : null)
+
+export const hitPricing = (hit: ProductHit, currencyCode: string) => {
+  const min_price = amount(hit[priceAttribute("min_price", currencyCode)])
+  const original_price = amount(
+    hit[priceAttribute("original_price", currencyCode)]
+  )
+  const on_sale =
+    hit[priceAttribute("on_sale", currencyCode)] === true &&
+    original_price !== null &&
+    min_price !== null &&
+    original_price > min_price
+
+  return {
+    currency_code: indexedCurrency(currencyCode),
+    min_price,
+    max_price: amount(hit[priceAttribute("max_price", currencyCode)]),
+    original_price,
+    on_sale,
+    // The index dropped the precomputed percentage when it went per-currency.
+    discount_percentage: on_sale
+      ? Math.round(((original_price! - min_price!) / original_price!) * 100)
+      : 0,
+  }
+}
 
 type SearchHitProps = {
   hit: ProductHit
+  currencyCode: string
   onNavigate?: () => void
 }
 
-const SearchHit = ({ hit, onNavigate }: SearchHitProps) => {
+const SearchHit = ({ hit, currencyCode, onNavigate }: SearchHitProps) => {
   // Without a handle there's no product page to link to.
   if (!hit.handle) {
     return null
   }
 
-  const currencyCode = hit.currency_code ?? undefined
-  const hasPrice = typeof hit.min_price === "number" && Boolean(currencyCode)
-  const onSale =
-    Boolean(hit.on_sale) &&
-    typeof hit.original_price === "number" &&
-    hit.original_price > (hit.min_price ?? 0)
+  const pricing = hitPricing(hit, currencyCode)
+  const onSale = pricing.on_sale
+
+  const format = (value: number) =>
+    convertToLocale({ amount: value, currency_code: pricing.currency_code })
 
   return (
     <li>
@@ -44,7 +72,11 @@ const SearchHit = ({ hit, onNavigate }: SearchHitProps) => {
         data-testid="search-hit-link"
       >
         <div className="w-16 shrink-0">
-          <Thumbnail thumbnail={hit.thumbnail} size="square" type="preview" />
+          <Thumbnail
+            thumbnail={hit.thumbnail as string | null}
+            size="square"
+            type="preview"
+          />
         </div>
 
         <div className="flex flex-col gap-y-1 min-w-0">
@@ -55,14 +87,11 @@ const SearchHit = ({ hit, onNavigate }: SearchHitProps) => {
             {hit.title}
           </Text>
 
-          {hasPrice && (
+          {pricing.min_price !== null && (
             <div className="flex items-center gap-x-2">
               {onSale && (
                 <Text className="line-through text-ui-fg-muted text-xs">
-                  {convertToLocale({
-                    amount: hit.original_price!,
-                    currency_code: currencyCode!,
-                  })}
+                  {format(pricing.original_price!)}
                 </Text>
               )}
               <Text
@@ -70,16 +99,8 @@ const SearchHit = ({ hit, onNavigate }: SearchHitProps) => {
                   "text-ui-fg-interactive": onSale,
                 })}
               >
-                {convertToLocale({
-                  amount: hit.min_price!,
-                  currency_code: currencyCode!,
-                })}
+                {format(pricing.min_price)}
               </Text>
-              {onSale && Boolean(hit.discount_percentage) && (
-                <Text className="text-xs text-ui-fg-interactive">
-                  -{hit.discount_percentage}%
-                </Text>
-              )}
             </div>
           )}
         </div>

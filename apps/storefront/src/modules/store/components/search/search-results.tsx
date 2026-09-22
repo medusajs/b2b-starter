@@ -9,7 +9,7 @@ import { useHits, useInstantSearch, useStats } from "react-instantsearch"
 import ProductHitCard from "./product-hit-card"
 import SearchPagination from "./search-pagination"
 
-const SearchResults = () => {
+const SearchResults = ({ currencyCode }: { currencyCode: string }) => {
   const { items } = useHits<ProductHit>()
   const { nbHits } = useStats()
   const { status, error } = useInstantSearch()
@@ -54,7 +54,7 @@ const SearchResults = () => {
         >
           {items.map((hit) => (
             <li key={hit.objectID}>
-              <ProductHitCard hit={hit} />
+              <ProductHitCard hit={hit} currencyCode={currencyCode} />
             </li>
           ))}
         </ul>

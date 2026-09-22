@@ -1,5 +1,6 @@
 import { retrieveCart } from "@/lib/data/cart"
 import { retrieveCustomer } from "@/lib/data/customer"
+import { SEARCH_PRICE_CURRENCIES } from "@/lib/search-client"
 import AccountButton from "@/modules/account/components/account-button"
 import CartButton from "@/modules/cart/components/cart-button"
 import LocalizedClientLink from "@/modules/common/components/localized-client-link"
@@ -14,7 +15,11 @@ import SkeletonCartButton from "@/modules/skeletons/components/skeleton-cart-but
 import SkeletonMegaMenu from "@/modules/skeletons/components/skeleton-mega-menu"
 import { Suspense } from "react"
 
-export async function NavigationHeader() {
+export async function NavigationHeader({
+  currencyCode = SEARCH_PRICE_CURRENCIES[0],
+}: {
+  currencyCode?: string
+}) {
   const customer = await retrieveCustomer().catch(() => null)
   const cart = await retrieveCart()
 
@@ -44,7 +49,7 @@ export async function NavigationHeader() {
             </nav>
           </div>
           <div className="flex justify-end items-center gap-2">
-            <Search />
+            <Search currencyCode={currencyCode} />
 
             <div className="h-4 w-px bg-neutral-300" />
 

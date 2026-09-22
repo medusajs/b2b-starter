@@ -12,7 +12,7 @@ import SearchPanel from "./panel"
 
 const HITS_PER_PAGE = 12
 
-const Search = () => {
+const Search = ({ currencyCode }: { currencyCode: string }) => {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
@@ -50,7 +50,10 @@ const Search = () => {
             future={{ preserveSharedStateOnUnmount: true }}
           >
             <Configure hitsPerPage={HITS_PER_PAGE} />
-            <SearchPanel onNavigate={() => setIsOpen(false)} />
+            <SearchPanel
+              currencyCode={currencyCode}
+              onNavigate={() => setIsOpen(false)}
+            />
           </InstantSearch>
         </div>
       </Drawer.Content>

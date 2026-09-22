@@ -1,28 +1,32 @@
 "use client"
 
-import { PRODUCT_INDEX_NAME } from "@/lib/search-client"
+import { PRODUCT_INDEX_NAME, priceAttribute } from "@/lib/search-client"
 import { ChevronUpDown } from "@medusajs/icons"
 import { useSortBy } from "react-instantsearch"
 
-export const SORT_ITEMS = [
-  { value: PRODUCT_INDEX_NAME, label: "Relevance" },
-  {
-    value: `${PRODUCT_INDEX_NAME}/sort/created_at:desc`,
-    label: "Latest Arrivals",
-  },
-  {
-    value: `${PRODUCT_INDEX_NAME}/sort/min_price:asc`,
-    label: "Price: Low -> High",
-  },
-  {
-    value: `${PRODUCT_INDEX_NAME}/sort/min_price:desc`,
-    label: "Price: High -> Low",
-  },
-]
+export const getSortItems = (currencyCode: string) => {
+  const minPrice = priceAttribute("min_price", currencyCode)
 
-const SortSelect = () => {
+  return [
+    { value: PRODUCT_INDEX_NAME, label: "Relevance" },
+    {
+      value: `${PRODUCT_INDEX_NAME}/sort/created_at:desc`,
+      label: "Latest Arrivals",
+    },
+    {
+      value: `${PRODUCT_INDEX_NAME}/sort/${minPrice}:asc`,
+      label: "Price: Low -> High",
+    },
+    {
+      value: `${PRODUCT_INDEX_NAME}/sort/${minPrice}:desc`,
+      label: "Price: High -> Low",
+    },
+  ]
+}
+
+const SortSelect = ({ currencyCode }: { currencyCode: string }) => {
   const { currentRefinement, options, refine } = useSortBy({
-    items: SORT_ITEMS,
+    items: getSortItems(currencyCode),
   })
 
   return (

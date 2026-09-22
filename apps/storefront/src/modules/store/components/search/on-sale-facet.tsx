@@ -1,16 +1,18 @@
 "use client"
 
+import { priceAttribute } from "@/lib/search-client"
 import CheckboxWithLabel from "@/modules/common/components/checkbox"
 import { Text } from "@medusajs/ui"
 import { useToggleRefinement } from "react-instantsearch"
 
 import FacetSection from "./facet-section"
 
+/** Only used to key the accordion section — the facet itself is per currency. */
 export const ON_SALE_ATTRIBUTE = "on_sale"
 
-const OnSaleFacet = () => {
+const OnSaleFacet = ({ currencyCode }: { currencyCode: string }) => {
   const { value, refine } = useToggleRefinement({
-    attribute: ON_SALE_ATTRIBUTE,
+    attribute: priceAttribute("on_sale", currencyCode),
     on: true,
   })
 

@@ -22,6 +22,7 @@
     "@medusajs/js-sdk": "2.21.2",
     "@medusajs/types": "2.21.2",
     "@medusajs/ui": "4.2.6",
+    "@medusajs/instantsearch-adapter": "2.21.2",
     "@paypal/paypal-js": "^5.0.6",
     "@paypal/react-paypal-js": "^7.8.1",
     "@radix-ui/react-dialog": "^1.1.1",

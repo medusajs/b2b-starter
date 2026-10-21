@@ -9,7 +9,7 @@ import { notFound } from "next/navigation"
 export const dynamicParams = true
 
 type Props = {
-  params: { countryCode: string; handle: string }
+  params: Promise<{ countryCode: string; handle: string }>
 }
 
 export async function generateStaticParams() {

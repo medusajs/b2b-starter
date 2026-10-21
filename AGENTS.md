@@ -83,7 +83,7 @@ Run from the repo root unless noted. Root scripts fan out through Turborepo.
 | Storefront data fetching | `apps/storefront/src/lib/data/`, `src/lib/config.ts` | `@medusajs/js-sdk`, `@medusajs/types` |
 | Storefront search | `apps/storefront/src/lib/search-client.ts` | `@medusajs/instantsearch-adapter` |
 | Storefront UI | `apps/storefront/src/modules/`, `src/app/[countryCode]/` | `@medusajs/ui`, `@medusajs/icons` |
-| Lint failures | `eslint.config.ts`, `apps/backend/eslint.config.ts`, `apps/storefront/.eslintrc.js` | `@medusajs/eslint-plugin` |
+| Lint failures | `eslint.config.ts`, `apps/backend/eslint.config.ts`, `apps/storefront/eslint.config.mjs` | `@medusajs/eslint-plugin`, `eslint-config-next` |
 
 ## Medusa Package Docs (node_modules)
 

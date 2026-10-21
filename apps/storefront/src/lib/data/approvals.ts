@@ -83,10 +83,10 @@ export const updateApproval = async (
   )
 
   const cacheTag = await getCacheTag("approvals")
-  revalidateTag(cacheTag)
+  revalidateTag(cacheTag, { expire: 0 })
 
   const cartTag = await getCacheTag("carts")
-  revalidateTag(cartTag)
+  revalidateTag(cartTag, { expire: 0 })
 
   return approval
 }

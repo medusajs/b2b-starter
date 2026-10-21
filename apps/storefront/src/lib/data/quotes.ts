@@ -123,7 +123,7 @@ export const acceptQuote = async (id: string) => {
         getCacheTag(["quote", id].join("-")),
         getCacheTag(["quotePreview", id].join("-")),
       ])
-      tags.forEach((tag) => revalidateTag(tag))
+      tags.forEach((tag) => revalidateTag(tag, { expire: 0 }))
     })
 }
 
@@ -144,7 +144,7 @@ export const rejectQuote = async (id: string) => {
         getCacheTag(["quote", id].join("-")),
         getCacheTag(["quotePreview", id].join("-")),
       ])
-      tags.forEach((tag) => revalidateTag(tag))
+      tags.forEach((tag) => revalidateTag(tag, { expire: 0 }))
     })
 }
 
@@ -175,6 +175,6 @@ export const createQuoteMessage = async (
         getCacheTag(["quote", id].join("-")),
         getCacheTag(["quotePreview", id].join("-")),
       ])
-      tags.forEach((tag) => revalidateTag(tag))
+      tags.forEach((tag) => revalidateTag(tag, { expire: 0 }))
     })
 }

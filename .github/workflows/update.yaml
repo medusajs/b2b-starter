@@ -3,6 +3,8 @@ name: Update Medusa
 
 on:
   workflow_dispatch: # Allow manual runs
+  repository_dispatch:
+    types: [medusa-release-published]
 
 jobs:
   update:
@@ -23,4 +25,4 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          
+          target-version: ${{ github.event.client_payload.version }}

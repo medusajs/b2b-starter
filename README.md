@@ -60,11 +60,11 @@ The fastest way to get started is deploying with [Medusa Cloud](https://cloud.me
 
 ### Local Installation
 
-> **Prerequisites:
+> **Prerequisites:**
 >
-> - [Node.js](https://nodejs.org/) v20+
+> - [Node.js](https://nodejs.org/) v22.22+
 > - [PostgreSQL](https://www.postgresql.org/) v15+
-> - [pnpm](https://pnpm.io/) v10+
+> - [pnpm](https://pnpm.io/) v9 (pinned to `pnpm@9.15.0` via `packageManager`)
 
 1. Clone the repository and install dependencies:
 
@@ -80,7 +80,7 @@ pnpm install
 cp apps/backend/.env.template apps/backend/.env
 ```
 
-3. Set the database URL in `apps/backend.env`:
+3. Set the database URL in `apps/backend/.env`:
 
 ```bash
 # Replace with actual database URL, make sure the database exists.
@@ -122,7 +122,7 @@ cp apps/storefront/.env.template apps/storefront/.env.local
 NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_6c3...
 ```
 
-10.  Start storefront:
+10. Start storefront:
 
 ```bash
 cd apps/storefront
@@ -131,11 +131,21 @@ pnpm dev
 
 The storefront runs on `http://localhost:8000`.
 
-You can slo run the following command from the root to start both backend and storefront:
+You can also run the following command from the root to start both backend and storefront:
 
 ```bash
 pnpm dev
 ```
+
+## Project Structure
+
+```text
+apps/
+├── backend/      # Medusa v2 app: custom modules (company, quote, approval), API routes, workflows, admin extensions
+└── storefront/   # Next.js 15 App Router storefront
+```
+
+The repo is a pnpm workspace orchestrated by [Turborepo](https://turborepo.com). Root scripts (`dev`, `build`, `lint`, `test:integration:http`) run in each app.
 
 ## Configuration
 
@@ -147,20 +157,34 @@ pnpm dev
 | `REDIS_URL` | Redis connection string (optional) |
 | `JWT_SECRET` | Secret used to sign JWT tokens |
 | `COOKIE_SECRET` | Secret used to sign session cookies |
+| `STORE_CORS` / `ADMIN_CORS` / `AUTH_CORS` | Allowed origins for the store, admin, and auth APIs |
 
 ### Storefront (`apps/storefront/.env.local`)
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | URL of the Medusa backend |
+| `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Publishable API key (required) |
 | `NEXT_PUBLIC_BASE_URL` | Public URL of the storefront |
 | `NEXT_PUBLIC_DEFAULT_REGION` | Default region code (e.g. `us`) |
+| `NEXT_PUBLIC_MEDUSA_PAYMENTS_PUBLISHABLE_KEY` | Medusa Payments publishable key (optional) |
+| `NEXT_PUBLIC_MEDUSA_PAYMENTS_ACCOUNT_ID` | Medusa Payments account ID (optional) |
 | `REVALIDATE_SECRET` | Secret for on-demand cache revalidation |
+
+## Building with AI Agents
+
+- [`AGENTS.md`](./AGENTS.md): commands, structure, where to find things, and conventions for coding agents.
+- Package docs: installed `@medusajs/*` packages ship an `AGENTS.md` in `node_modules/@medusajs/<pkg>/` (Medusa releases after v2.21.2).
+- [Medusa agent skills](https://docs.medusajs.com/learn/introduction/build-with-llms-ai/agentic-skills) for backend, admin, and storefront work.
+- Docs MCP server: `claude mcp add --transport http medusa https://docs.medusajs.com/mcp`
+- Medusa Cloud MCP server (Cloud users): `claude mcp add --transport http medusa-cloud https://cloud.medusajs.com/mcp`
 
 ## Resources
 
 - [Medusa Documentation](https://docs.medusajs.com)
 - [Medusa B2B Commerce Recipe](https://docs.medusajs.com/resources/recipes/b2b)
+- [Build with LLMs and AI](https://docs.medusajs.com/learn/introduction/build-with-llms-ai)
+- [Medusa docs for LLMs (llms.txt)](https://docs.medusajs.com/llms.txt)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Discord Community](https://discord.gg/xpCwq3Kfn8)
 

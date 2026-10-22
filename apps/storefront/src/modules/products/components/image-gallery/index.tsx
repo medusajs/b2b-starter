@@ -83,7 +83,7 @@ const ImageGallery = ({ product }: ImageGalleryProps) => {
               src={selectedImage.url}
               priority
               className="absolute inset-0 rounded-rounded p-20 overflow-visible object-contain"
-              alt={(selectedImage.metadata?.alt as string) || ""}
+              alt={(selectedImage.metadata?.alt as string) || product.title}
               fill
               sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
             />
@@ -94,6 +94,7 @@ const ImageGallery = ({ product }: ImageGalleryProps) => {
         {images.length > 1 && (
           <div className="flex flex-row gap-x-2 self-end small:self-auto">
             <IconButton
+              aria-label="Previous image"
               disabled={selectedImageIndex === 0}
               className="rounded-full items-center justify-center"
               onClick={() => handleArrowClick("left")}
@@ -101,6 +102,7 @@ const ImageGallery = ({ product }: ImageGalleryProps) => {
               <ArrowLeftMini />
             </IconButton>
             <IconButton
+              aria-label="Next image"
               disabled={selectedImageIndex === images.length - 1}
               className="rounded-full items-center justify-center"
               onClick={() => handleArrowClick("right")}
@@ -116,6 +118,7 @@ const ImageGallery = ({ product }: ImageGalleryProps) => {
               className="flex aspect-[1/1] w-8 h-8 rounded-rounded"
               onClick={() => handleImageClick(image)}
               role="button"
+              aria-label={`Show image ${index + 1}`}
             >
               <Image
                 src={image.url}

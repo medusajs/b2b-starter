@@ -55,7 +55,7 @@ export const getProductByHandle = async (handle: string, regionId: string) => {
         handle,
         region_id: regionId,
         fields:
-          "*variants.calculated_price,+variants.inventory_quantity,+metadata,+tags",
+          "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags",
       },
       headers,
       next,
@@ -69,7 +69,9 @@ export const listProducts = async ({
   countryCode,
 }: {
   pageParam?: number
-  queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
+  queryParams?: HttpTypes.FindParams &
+    HttpTypes.StoreProductParams &
+    Pick<HttpTypes.StoreProductListParams, "q">
   countryCode: string
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }

@@ -12,6 +12,9 @@ export const metadata: Metadata = {
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light" className={GeistSans.variable}>
+      <head>
+        <link rel="ucp" href="/.well-known/ucp" />
+      </head>
       <body>
         <main className="relative">{props.children}</main>
         <Toaster className="z-[99999]" position="bottom-left" />

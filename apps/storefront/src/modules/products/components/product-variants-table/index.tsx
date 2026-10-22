@@ -1,10 +1,12 @@
 import { addToCartEventBus } from "@/lib/data/cart-event-bus"
 import { getProductPrice } from "@/lib/util/get-product-price"
+import { isVariantInStock } from "@/lib/util/inventory"
 import { HttpTypes, StoreProduct, StoreProductVariant } from "@medusajs/types"
 import { clx, Table } from "@medusajs/ui"
 import Button from "@/modules/common/components/button"
 import ShoppingBag from "@/modules/common/icons/shopping-bag"
-import { useState } from "react"
+import { useParams } from "next/navigation"
+import { FormEvent, useState, useSyncExternalStore } from "react"
 import BulkTableQuantity from "../bulk-table-quantity"
 
 const ProductVariantsTable = ({
@@ -14,7 +16,14 @@ const ProductVariantsTable = ({
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
 }) => {
+  const { countryCode } = useParams<{ countryCode: string }>()
   const [isAdding, setIsAdding] = useState(false)
+  // Keeps the submit button enabled in server HTML so the form posts without JavaScript.
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
   const [lineItemsMap, setLineItemsMap] = useState<
     Map<
       string,
@@ -51,7 +60,12 @@ const ProductVariantsTable = ({
     })
   }
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (totalQuantity === 0) {
+      return
+    }
+
     setIsAdding(true)
 
     const lineItems = Array.from(lineItemsMap.entries()).map(
@@ -72,7 +86,17 @@ const ProductVariantsTable = ({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <form
+      method="post"
+      action={`/${countryCode}/cart/add`}
+      onSubmit={handleAddToCart}
+      className="flex flex-col gap-6"
+      {...{
+        toolname: "add_to_cart",
+        tooldescription:
+          "Add product variants to the shopping cart. Set a quantity for each variant to add.",
+      }}
+    >
       <div className="overflow-x-auto p-px">
         <Table className="w-full rounded-xl overflow-hidden shadow-borders-base border-none ">
           <Table.Header className="border-t-0">
@@ -90,6 +114,9 @@ const ProductVariantsTable = ({
               })}
               <Table.HeaderCell className="px-4 border-x">
                 Price
+              </Table.HeaderCell>
+              <Table.HeaderCell className="px-4 border-x">
+                Availability
               </Table.HeaderCell>
               <Table.HeaderCell className="px-4">Quantity</Table.HeaderCell>
             </Table.Row>
@@ -122,9 +149,13 @@ const ProductVariantsTable = ({
                   <Table.Cell className="px-4 border-x">
                     {variantPrice?.calculated_price}
                   </Table.Cell>
+                  <Table.Cell className="px-4 border-x">
+                    {isVariantInStock(variant) ? "In stock" : "Out of stock"}
+                  </Table.Cell>
                   <Table.Cell className="pl-1 !pr-1">
                     <BulkTableQuantity
                       variantId={variant.id}
+                      label={`Quantity for ${variant.title ?? variant.sku}`}
                       onChange={handleQuantityChange}
                     />
                   </Table.Cell>
@@ -135,22 +166,22 @@ const ProductVariantsTable = ({
         </Table>
       </div>
       <Button
-        onClick={handleAddToCart}
+        type="submit"
         variant="primary"
         className="w-full h-10"
         isLoading={isAdding}
-        disabled={totalQuantity === 0}
+        disabled={isHydrated && totalQuantity === 0}
         data-testid="add-product-button"
       >
         <ShoppingBag
           className="text-white"
           fill={totalQuantity === 0 ? "none" : "#fff"}
         />
-        {totalQuantity === 0
+        {isHydrated && totalQuantity === 0
           ? "Choose product variant(s) above"
           : "Add to cart"}
       </Button>
-    </div>
+    </form>
   )
 }
 

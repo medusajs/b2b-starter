@@ -38,6 +38,7 @@ const PreviewAddToCart = ({
   return (
     <Button
       className="rounded-full p-3 border-none shadow-none"
+      aria-label={`Add ${product.title} to cart`}
       onClick={(e) => {
         e.preventDefault()
         handleAddToCart()

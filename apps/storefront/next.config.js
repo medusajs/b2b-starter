@@ -7,6 +7,34 @@ checkEnvVariables()
  */
 const nextConfig = {
   reactStrictMode: true,
+  agentRules: false,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [{ key: "Link", value: '</.well-known/ucp>; rel="ucp"' }],
+      },
+      {
+        source: "/:countryCode/products/:handle",
+        headers: [{ key: "Vary", value: "Accept" }],
+      },
+    ]
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/:countryCode/products/:handle([^/.]+).md",
+          destination: "/:countryCode/products/:handle/markdown",
+        },
+        {
+          source: "/:countryCode/products/:handle([^/.]+)",
+          has: [{ type: "header", key: "accept", value: ".*text/markdown.*" }],
+          destination: "/:countryCode/products/:handle/markdown",
+        },
+      ],
+    }
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

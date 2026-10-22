@@ -4,10 +4,15 @@ import { useEffect, useState } from "react"
 
 type BulkTableQuantityProps = {
   variantId: string
+  label: string
   onChange: (variantId: string, quantity: number) => void
 }
 
-const BulkTableQuantity = ({ variantId, onChange }: BulkTableQuantityProps) => {
+const BulkTableQuantity = ({
+  variantId,
+  label,
+  onChange,
+}: BulkTableQuantityProps) => {
   const [quantity, setQuantity] = useState("0")
   const [shiftPressed, setShiftPressed] = useState(false)
 
@@ -65,6 +70,8 @@ const BulkTableQuantity = ({ variantId, onChange }: BulkTableQuantityProps) => {
   return (
     <div className="flex flex-row justify-between gap-2 w-full">
       <IconButton
+        type="button"
+        aria-label={`Decrease ${label.toLowerCase()}`}
         onClick={() => handleSubtract()}
         className="rounded-full hover:bg-neutral-200"
         variant="transparent"
@@ -72,6 +79,9 @@ const BulkTableQuantity = ({ variantId, onChange }: BulkTableQuantityProps) => {
         <MinusMini />
       </IconButton>
       <Input
+        name={`quantity[${variantId}]`}
+        aria-label={label}
+        min={0}
         value={quantity}
         onChange={(e) => handleChange(e)}
         onKeyDown={handleKeyDown}
@@ -79,6 +89,8 @@ const BulkTableQuantity = ({ variantId, onChange }: BulkTableQuantityProps) => {
         className="max-w-10 text-center items-center justify-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
       <IconButton
+        type="button"
+        aria-label={`Increase ${label.toLowerCase()}`}
         onClick={() => handleAdd()}
         className="rounded-full hover:bg-neutral-200"
         variant="transparent"

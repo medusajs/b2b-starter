@@ -32,10 +32,10 @@ export async function NavigationHeader({
               className="hover:text-ui-fg-base flex items-center w-fit"
               href="/"
             >
-              <h1 className="small:text-base text-sm font-medium flex items-center">
+              <span className="small:text-base text-sm font-medium flex items-center">
                 <LogoIcon className="inline mr-2" />
                 Medusa B2B Starter
-              </h1>
+              </span>
             </LocalizedClientLink>
 
             <nav>

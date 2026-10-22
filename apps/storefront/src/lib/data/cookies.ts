@@ -81,7 +81,7 @@ export const setCartId = async (cartId: string) => {
   cookies.set("_medusa_cart_id", cartId, {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: true,
-    sameSite: "strict",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
   })
 }

@@ -56,9 +56,8 @@ async function getRegionMap(cacheId: string) {
 }
 
 /**
- * Fetches regions from Medusa and sets the region cookie.
- * @param request
- * @param response
+ * Resolves the country code from the URL, falling back to the store default.
+ * Not IP-based, so crawlers and AI agents get a stable redirect.
  */
 async function getCountryCode(
   request: NextRequest,
@@ -67,17 +66,10 @@ async function getCountryCode(
   try {
     let countryCode
 
-    const vercelCountryCode = (
-      request.headers.get("x-vercel-ip-country") ||
-      request.headers.get("cf-ipcountry")
-    )?.toLowerCase()
-
     const urlCountryCode = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
 
     if (urlCountryCode && regionMap.has(urlCountryCode)) {
       countryCode = urlCountryCode
-    } else if (vercelCountryCode && regionMap.has(vercelCountryCode)) {
-      countryCode = vercelCountryCode
     } else if (regionMap.has(DEFAULT_REGION)) {
       countryCode = DEFAULT_REGION
     } else if (regionMap.keys().next().value) {
@@ -130,9 +122,20 @@ export async function middleware(request: NextRequest) {
   const urlHasCountryCode =
     countryCode && request.nextUrl.pathname.split("/")[1].includes(countryCode)
 
-  // check if one of the country codes is in the url
-  if (urlHasCountryCode && (!cartId || cartIdCookie) && cacheIdCookie) {
-    return NextResponse.next()
+  const isRoot = request.nextUrl.pathname === "/" && countryCode && !cartId
+
+  // Serve the page directly instead of redirecting to set the cache cookie, and
+  // serve the default region at "/", so cookieless agents and crawlers get content.
+  if ((urlHasCountryCode && (!cartId || cartIdCookie)) || isRoot) {
+    const pageResponse = isRoot
+      ? NextResponse.rewrite(new URL(`/${countryCode}`, request.url))
+      : NextResponse.next()
+    if (!cacheIdCookie) {
+      pageResponse.cookies.set("_medusa_cache_id", cacheId, {
+        maxAge: 60 * 60 * 24,
+      })
+    }
+    return pageResponse
   }
 
   // check if the url is a static asset
@@ -163,6 +166,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    "/((?!api|ucp|buy|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
   ],
 }

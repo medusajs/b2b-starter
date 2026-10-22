@@ -7,7 +7,6 @@ import ProductInfo from "@/modules/products/templates/product-info"
 import SkeletonRelatedProducts from "@/modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import React, { Suspense } from "react"
-import ProductActionsWrapper from "./product-actions-wrapper"
 import ProductFacts from "../components/product-facts"
 
 type ProductTemplateProps = {
@@ -34,11 +33,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <ImageGallery product={product} />
         <div className="flex flex-col bg-neutral-100 w-full gap-6 items-start justify-center small:p-20 p-6 h-full">
           <ProductInfo product={product} />
-          <Suspense
-            fallback={<ProductActions product={product} region={region} />}
-          >
-            <ProductActionsWrapper id={product.id} region={region} />
-          </Suspense>
+          <ProductActions product={product} region={region} />
           <ProductFacts product={product} />
         </div>
       </div>

@@ -15,6 +15,8 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 export const dynamicParams = true
+export const dynamic = "force-static"
+export const revalidate = 60
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>

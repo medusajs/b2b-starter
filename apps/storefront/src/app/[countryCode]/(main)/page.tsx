@@ -8,6 +8,9 @@ import SkeletonFeaturedProducts from "@/modules/skeletons/templates/skeleton-fea
 import { Metadata } from "next"
 import { Suspense } from "react"
 
+export const dynamic = "force-static"
+export const revalidate = 60
+
 export async function generateMetadata(props: {
   params: Promise<{ countryCode: string }>
 }): Promise<Metadata> {

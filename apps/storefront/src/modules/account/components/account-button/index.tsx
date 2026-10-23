@@ -2,7 +2,7 @@ import LocalizedClientLink from "@/modules/common/components/localized-client-li
 import User from "@/modules/common/icons/user"
 import { B2BCustomer } from "@/types/global"
 
-export default async function AccountButton({
+export default function AccountButton({
   customer,
 }: {
   customer: B2BCustomer | null

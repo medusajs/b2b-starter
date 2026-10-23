@@ -1,15 +1,14 @@
-import { retrieveCart } from "@/lib/data/cart"
-import { retrieveCustomer } from "@/lib/data/customer"
-import { listCartFreeShippingPrices } from "@/lib/data/fulfillment"
+import { SessionProvider } from "@/lib/context/session-context"
 import { getRegion } from "@/lib/data/regions"
+import { retrieveSession } from "@/lib/data/session"
 import { getBaseURL } from "@/lib/util/env"
-import CartMismatchBanner from "@/modules/layout/components/cart-mismatch-banner"
+import {
+  SessionCartMismatchBanner,
+  SessionFreeShippingNudge,
+} from "@/modules/layout/components/session-banners"
 import Footer from "@/modules/layout/templates/footer"
 import { NavigationHeader } from "@/modules/layout/templates/nav"
-import FreeShippingPriceNudge from "@/modules/shipping/components/free-shipping-price-nudge"
-import { StoreFreeShippingPrice } from "@/types/shipping-option/http"
 import { ArrowUpRightMini, ExclamationCircleSolid } from "@medusajs/icons"
-import { StoreCart } from "@medusajs/types"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -21,17 +20,13 @@ export default async function PageLayout(props: {
   params: Promise<{ countryCode: string }>
 }) {
   const { countryCode } = await props.params
-  const customer = await retrieveCustomer().catch(() => null)
-  const cart = await retrieveCart()
-  const region = await getRegion(countryCode)
-  let freeShippingPrices: StoreFreeShippingPrice[] = []
-
-  if (cart) {
-    freeShippingPrices = await listCartFreeShippingPrices(cart.id)
-  }
+  const [session, region] = await Promise.all([
+    retrieveSession(),
+    getRegion(countryCode),
+  ])
 
   return (
-    <>
+    <SessionProvider session={session}>
       <NavigationHeader currencyCode={region?.currency_code} />
       <div className="flex items-center text-neutral-50 justify-center small:p-4 p-2 text-center bg-neutral-900 small:gap-2 gap-1 text-sm">
         <div className="flex flex-col small:flex-row small:gap-2 gap-1 items-center">
@@ -51,21 +46,13 @@ export default async function PageLayout(props: {
         </div>
       </div>
 
-      {customer && cart && (
-        <CartMismatchBanner customer={customer} cart={cart} />
-      )}
+      <SessionCartMismatchBanner />
 
       {props.children}
 
       <Footer />
 
-      {cart && freeShippingPrices && (
-        <FreeShippingPriceNudge
-          variant="popup"
-          cart={cart as StoreCart}
-          freeShippingPrices={freeShippingPrices}
-        />
-      )}
-    </>
+      <SessionFreeShippingNudge />
+    </SessionProvider>
   )
 }

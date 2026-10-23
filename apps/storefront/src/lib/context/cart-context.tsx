@@ -55,9 +55,11 @@ const CartContext = createContext<
 
 export function CartProvider({
   cart,
+  onCartUpdated,
   children,
 }: PropsWithChildren<{
   cart: B2BCart | null
+  onCartUpdated?: () => Promise<void>
 }>) {
   const { countryCode } = useParams()
 
@@ -109,7 +111,8 @@ export function CartProvider({
                 quantity: item.quantity + lineItem.quantity,
                 total: (item.total || 0) + lineItem.quantity * item.unit_price,
                 original_total:
-                  (item.original_total || 0) + lineItem.quantity * item.unit_price,
+                  (item.original_total || 0) +
+                  lineItem.quantity * item.unit_price,
               }
 
               continue
@@ -167,17 +170,19 @@ export function CartProvider({
             quantity: lineItem.quantity,
           })),
           countryCode: countryCode as string,
-        }).catch((e) => {
-          if (e.message === "Cart is pending approval") {
-            toast.error("Cart is locked for approval.")
-          } else {
-            toast.error("Failed to add to cart")
-          }
-          setOptimisticCart(prevCart)
         })
+          .then(onCartUpdated)
+          .catch((e) => {
+            if (e.message === "Cart is pending approval") {
+              toast.error("Cart is locked for approval.")
+            } else {
+              toast.error("Failed to add to cart")
+            }
+            setOptimisticCart(prevCart)
+          })
       })
     },
-    [setOptimisticCart]
+    [setOptimisticCart, onCartUpdated]
   )
 
   useEffect(() => {
@@ -214,10 +219,12 @@ export function CartProvider({
 
     setIsUpdatingCart(true)
 
-    await deleteLineItem(lineItem).catch((e) => {
-      toast.error("Failed to delete item")
-      setOptimisticCart(prevCart)
-    })
+    await deleteLineItem(lineItem)
+      .then(onCartUpdated)
+      .catch((e) => {
+        toast.error("Failed to delete item")
+        setOptimisticCart(prevCart)
+      })
   }
 
   const handleUpdateCartQuantity = async (
@@ -275,10 +282,12 @@ export function CartProvider({
       await updateLineItem({
         lineId: lineItem,
         data: { quantity },
-      }).catch((e) => {
-        toast.error("Failed to update cart quantity")
-        setOptimisticCart(prevCart)
       })
+        .then(onCartUpdated)
+        .catch((e) => {
+          toast.error("Failed to update cart quantity")
+          setOptimisticCart(prevCart)
+        })
     }
   }
 
@@ -294,10 +303,12 @@ export function CartProvider({
 
     setIsUpdatingCart(true)
 
-    await emptyCart().catch((e) => {
-      toast.error("Failed to empty cart")
-      setOptimisticCart(prevCart)
-    })
+    await emptyCart()
+      .then(onCartUpdated)
+      .catch((e) => {
+        toast.error("Failed to empty cart")
+        setOptimisticCart(prevCart)
+      })
   }
 
   const sortedItems = useMemo(() => {

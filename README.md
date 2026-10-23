@@ -62,7 +62,7 @@ The fastest way to get started is deploying with [Medusa Cloud](https://cloud.me
 
 > **Prerequisites:**
 >
-> - [Node.js](https://nodejs.org/) v22.22+
+> - [Node.js](https://nodejs.org/) v22.23.4+
 > - [PostgreSQL](https://www.postgresql.org/) v15+
 > - [pnpm](https://pnpm.io/) v9 (pinned to `pnpm@9.15.0` via `packageManager`)
 

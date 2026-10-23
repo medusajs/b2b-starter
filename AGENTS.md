@@ -25,7 +25,7 @@ Run from the repo root unless noted. Root scripts fan out through Turborepo.
 | Generate migrations for a module | `cd apps/backend && pnpm medusa db:generate <module>` (`company`, `quote`, `approval`) |
 | Create admin user | `cd apps/backend && pnpm medusa user -e <email> -p <password>` |
 
-- Node `>=22.22.0` is enforced (`engine-strict=true` in `.npmrc`).
+- Node `>=22.23.4` is enforced (`engine-strict=true` in `.npmrc`).
 - HTTP integration tests need a reachable PostgreSQL; `@medusajs/test-utils` creates a temporary database per run.
 - Do not rely on `pnpm test`, `pnpm test:unit`, or `pnpm test:integration:modules`: no app defines `test`, and there are no `*.unit.spec.ts` or `src/modules/*/__tests__` files, so the latter two exit with "No tests found".
 

@@ -11,6 +11,7 @@ export type VariantPrice = {
   currency_code: string
   price_type: string
   percentage_diff: string
+  tax_included?: boolean
 }
 
 export const getPricesForVariant = (variant: any): VariantPrice | null => {
@@ -31,6 +32,8 @@ export const getPricesForVariant = (variant: any): VariantPrice | null => {
     }),
     currency_code: variant.calculated_price.currency_code,
     price_type: variant.calculated_price.calculated_price.price_list_type,
+    tax_included:
+      variant.calculated_price.is_calculated_price_tax_inclusive === true,
     percentage_diff: getPercentageDiff(
       variant.calculated_price.original_amount,
       variant.calculated_price.calculated_amount

@@ -16,7 +16,7 @@
   "scripts": {
     "build": "medusa build",
     "start": "medusa start",
-    "dev": "medusa develop",
+    "dev": "medusa develop --port 9010",
     "lint": "medusa lint",
     "clean": "rm -rf .medusa/server .medusa/admin node_modules",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",

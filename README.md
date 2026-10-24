@@ -38,6 +38,27 @@
 
 An official Medusa starter for B2B ecommerce, built with [Medusa](https://medusajs.com) and [Next.js 15](https://nextjs.org). It covers common business-to-business requirements out of the box and is designed to be customized and extended.
 
+## AKLAST — Türkiye (B2C + B2B) kurulum notları
+
+Bu repo `aklast.com.tr` için Medusa v2 tabanlı B2C (perakende) + B2B (bayi) lastik/jant platformuna dönüştürüldü.
+
+### Ödeme sağlayıcıları — iyzico kararı
+
+- **Aktif:** `pp_tr_manual_havale` (Havale/EFT) ve `pp_tr_manual_kapida` (Kapıda ödeme) [backend/src/providers/turkish-manual-payment.ts](`app/apps/backend/src/providers/turkish-manual-payment.ts` dosage) — her ikisi de canlı e2e ile kanıtlı: `scripts/e2e-manual-payments.mjs` (payment session → admin capture → sipariş, KDV %20 tutarlı).
+- **iyzico: KURULMADI (bilinçli karar).** Sandbox'ta kart/virtual POS uçtan uca testini doğrulayabilecek hesap/servis kanıtı sağlanamadı; plan gereği "uçtan uca test edilemiyorsa kurma" kuralına bağlı kalındı. Repo genelinde iyzico referansı yoktur. iyzico entegrasyonu gerektiğinde `medusa-config.ts`'e `medusa-payment-iyzico` tarzı bir provider eklenecek ve önce sandbox'ta uçtan uca test edilecek.
+
+### Kanıt betikleri (canlı backend karşı koşulur)
+
+| Betik | Kulanımda kapsam |
+|---|---|
+| `../scripts/bootstrap-aklast.mjs` | TRY bölgesi, KDV %20, satış kanalları, bayi grupları (idempotent) |
+| `../scripts/import-products.mjs` | Lastik/jant CSV içe aktarma + bayi fiyat listesi kuralı (`customer.groups.id`, idempotent) |
+| `../scripts/e2e-price-list.mjs` | Bayi/perakende fiyat ayrımı (ürün + sepet, `is_calculated_price_price_list`) |
+| `../scripts/e2e-credit-account.mjs` | Cari hesap: sepet→kargo→vadeli sipariş→limit aşımı reddi→tahsilat |
+| `../scripts/e2e-manual-payments.mjs` | Havale/EFT + Kapıda ödeme uçtan uca checkout |
+| `../scripts/e2e-quote.mjs` | Bayi RFQ: quote oluştur→fiyat teklifi→send→preview→accept→sipariş |
+| `../scripts/verify-storefront.mjs` | `/tr` ana sayfa, `/tr/store`, Türkçe karakterli handle'lı ürün sayfaları |
+
 ## Features
 
 - **Company management** — Create and manage companies, invite employees, and assign roles

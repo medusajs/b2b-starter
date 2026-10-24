@@ -8,15 +8,22 @@ type ConvertToLocaleParams = {
   locale?: string
 }
 
+const LOCALE_BY_CURRENCY: Record<string, string> = {
+  try: "tr-TR",
+}
+
+export const localeForCurrency = (currency_code: string) =>
+  LOCALE_BY_CURRENCY[currency_code?.toLowerCase()] ?? "en-US"
+
 export const convertToLocale = ({
   amount,
   currency_code,
   minimumFractionDigits,
   maximumFractionDigits,
-  locale = "en-US",
+  locale,
 }: ConvertToLocaleParams) => {
   return currency_code && !isEmpty(currency_code)
-    ? new Intl.NumberFormat(locale, {
+    ? new Intl.NumberFormat(locale ?? localeForCurrency(currency_code), {
         style: "currency",
         currency: currency_code,
         minimumFractionDigits,

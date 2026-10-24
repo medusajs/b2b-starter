@@ -18,9 +18,9 @@ export async function generateMetadata(props: {
   const [origin, regions] = await Promise.all([getSiteOrigin(), listRegions()])
 
   return {
-    title: "Medusa Next.js Starter Template",
+    title: "AKLAST — Lastik ve Jant Mağazası",
     description:
-      "A performant frontend ecommerce starter template with Next.js 14 and Medusa.",
+      "AKLAST: binek, SUV, hafif ticari ve kamyon lastikleri, jantlar. KDV dahil TRY fiyatları, hızlı kargo, bayilere özel toptan kanal.",
     alternates: {
       canonical: `${origin}/${countryCode}`,
       languages: {

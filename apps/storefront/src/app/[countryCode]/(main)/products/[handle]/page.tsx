@@ -15,8 +15,19 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 export const dynamicParams = true
-export const dynamic = "force-static"
 export const revalidate = 60
+// force-static, Türkçe karakterli handle'ları statik rota eşleşmesinden
+// duchirip 404 tutuyordu; varsayılan (ISR) render segmenti on-demand çözer.
+// Ayrıca Next, URL segment'ini decode etmeden gelebilir (…k%C4%B1%C5%9F) —
+// ikisi de getProductByHandle'a gerçek handle ile gitsin.
+// `decodeHandle` hem %'li hem zaten decode edilmiş handle'ı güvenle işler.
+const decodeHandle = (raw: string) => {
+  try {
+    return raw.includes("%") ? decodeURIComponent(raw) : raw
+  } catch {
+    return raw
+  }
+}
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -58,7 +69,8 @@ export async function generateStaticParams() {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
-  const { handle } = params
+  const { handle: rawHandle } = params
+  const handle = decodeHandle(rawHandle ?? "")
   const region = await getRegion(params.countryCode)
 
   if (!region) {
@@ -145,7 +157,8 @@ export default async function ProductPage(props: Props) {
     notFound()
   }
 
-  const pricedProduct = await getProductByHandle(params.handle, region.id)
+  const handle = decodeHandle(params.handle ?? "")
+  const pricedProduct = await getProductByHandle(handle, region.id)
   if (!pricedProduct) {
     notFound()
   }

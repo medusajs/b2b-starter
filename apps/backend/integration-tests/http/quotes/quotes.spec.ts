@@ -18,7 +18,6 @@ import {
 jest.setTimeout(60 * 1000);
 
 medusaIntegrationTestRunner({
-  inApp: true,
   env: {},
   testSuite: ({ api, getContainer }) => {
     let storeHeaders, cart, product, salesChannel, region, customerToken;

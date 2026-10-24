@@ -1,7 +1,8 @@
 import { QUOTE_MODULE } from "./src/modules/quote";
 import { APPROVAL_MODULE } from "./src/modules/approval";
 import { COMPANY_MODULE } from "./src/modules/company";
-import { loadEnv, defineConfig } from "@medusajs/framework/utils";
+import { CREDIT_ACCOUNT_MODULE } from "./src/modules/credit-account";
+import { Modules, loadEnv, defineConfig } from "@medusajs/framework/utils";
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
@@ -17,8 +18,20 @@ module.exports = defineConfig({
     },
   },
   modules: {
+    [Modules.PAYMENT]: {
+      resolve: "@medusajs/payment",
+      options: {
+        providers: [
+          { resolve: "./src/providers/turkish-manual-payment", id: "havale", options: { mode: "bank-transfer" } },
+          { resolve: "./src/providers/turkish-manual-payment", id: "kapida", options: { mode: "cod" } },
+        ],
+      },
+    },
     [COMPANY_MODULE]: {
       resolve: "./modules/company",
+    },
+    [CREDIT_ACCOUNT_MODULE]: {
+      resolve: "./modules/credit-account",
     },
     [QUOTE_MODULE]: {
       resolve: "./modules/quote",

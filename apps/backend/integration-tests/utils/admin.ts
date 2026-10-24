@@ -43,7 +43,7 @@ export const createAdminUser = async (adminHeaders, appContainer) => {
       actor_type: "user",
       auth_identity_id: authIdentity.id,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET ?? "supersecret",
     {
       expiresIn: "1d",
     }

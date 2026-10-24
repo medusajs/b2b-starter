@@ -26,6 +26,14 @@ export default async function PreviewPrice({ price }: { price: VariantPrice }) {
       >
         {price.calculated_price}
       </Text>
+      {price.tax_included && (
+        <Text
+          className="text-neutral-600 text-[0.6rem]"
+          data-testid="preview-price-tax-note"
+        >
+          KDV dahil
+        </Text>
+      )}
     </>
   )
 }

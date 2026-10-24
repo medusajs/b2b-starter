@@ -23,7 +23,7 @@ export async function NavigationHeader({
             >
               <span className="small:text-base text-sm font-medium flex items-center">
                 <LogoIcon className="inline mr-2" />
-                Medusa B2B Starter
+                AKLAST
               </span>
             </LocalizedClientLink>
 

@@ -130,7 +130,7 @@ export const ManageItemsSection = ({
         <ManageItem
           key={item.id}
           originalItem={originalItemsMap.get(item.id)!}
-          item={item}
+          item={item as AdminOrderPreview["items"][0]}
           orderId={order.id}
           currencyCode={order.currency_code}
         />

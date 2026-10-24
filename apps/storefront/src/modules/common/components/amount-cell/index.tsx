@@ -1,7 +1,8 @@
 import { clx } from "@medusajs/ui"
+import { localeForCurrency } from "@/lib/util/money"
 
 export const formatAmount = (amount: number, currency_code: string) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(localeForCurrency(currency_code), {
     style: "currency",
     currency: currency_code,
   }).format(amount)

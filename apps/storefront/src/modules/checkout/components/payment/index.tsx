@@ -1,7 +1,8 @@
 "use client"
 
-import { isStripeLike, paymentInfoMap } from "@/lib/constants"
+import { getPaymentInfo, isCardPayment, isStripeLike } from "@/lib/constants"
 import { initiatePaymentSession } from "@/lib/data/cart"
+import { getPaymentErrorMessage } from "@/lib/util/payment-error"
 import ErrorMessage from "@/modules/checkout/components/error-message"
 import PaymentContainer from "@/modules/checkout/components/payment-container"
 import { StripeContext } from "@/modules/checkout/components/payment-wrapper"
@@ -163,7 +164,6 @@ const Payment = ({
                   .map((paymentMethod) => {
                     return (
                       <PaymentContainer
-                        paymentInfoMap={paymentInfoMap}
                         paymentProviderId={paymentMethod.id}
                         key={paymentMethod.id}
                         selectedPaymentOptionId={selectedPaymentMethod}
@@ -171,7 +171,7 @@ const Payment = ({
                     )
                   })}
               </RadioGroup>
-              {stripeReady && selectedPaymentMethod === "pp_stripe_stripe" && (
+              {stripeReady && isCardPayment(selectedPaymentMethod) && (
                 <div className="mt-5 transition-all duration-150 ease-in-out">
                   <Text className="txt-medium-plus text-ui-fg-base mb-1">
                     Enter your card details:
@@ -184,7 +184,7 @@ const Payment = ({
                         e.brand &&
                           e.brand.charAt(0).toUpperCase() + e.brand.slice(1)
                       )
-                      setError(e.error?.message || null)
+                      setError(getPaymentErrorMessage(e.error))
                       setCardComplete(e.complete)
                     }}
                   />
@@ -216,8 +216,7 @@ const Payment = ({
               onClick={handleSubmit}
               isLoading={isLoading}
               disabled={
-                (selectedPaymentMethod === "pp_stripe_stripe" &&
-                  !cardComplete) ||
+                (isCardPayment(selectedPaymentMethod) && !cardComplete) ||
                 (!selectedPaymentMethod && !paidByGiftcard)
               }
               data-testid="submit-payment-button"
@@ -237,7 +236,7 @@ const Payment = ({
                   className="txt-medium text-ui-fg-subtle"
                   data-testid="payment-method-summary"
                 >
-                  {paymentInfoMap[selectedPaymentMethod]?.title ||
+                  {getPaymentInfo(selectedPaymentMethod)?.title ||
                     selectedPaymentMethod}
                 </Text>
               </div>
@@ -247,14 +246,14 @@ const Payment = ({
                   data-testid="payment-details-summary"
                 >
                   <Container className="flex items-center h-7 w-fit p-2 bg-ui-button-neutral-hover">
-                    {paymentInfoMap[selectedPaymentMethod]?.icon || (
+                    {getPaymentInfo(selectedPaymentMethod)?.icon || (
                       <CreditCard />
                     )}
                   </Container>
                   <Text>
                     {isStripeLike(selectedPaymentMethod) && cardBrand
                       ? cardBrand
-                      : paymentInfoMap[selectedPaymentMethod]?.title}
+                      : getPaymentInfo(selectedPaymentMethod)?.title}
                   </Text>
                 </div>
               </div>

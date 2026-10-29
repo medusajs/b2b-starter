@@ -1,9 +1,14 @@
 "use client"
 
-import { isPaypal, isStripeLike } from "@/lib/constants"
+import {
+  getMedusaPaymentsAccount,
+  isMedusaPayments,
+  isPaypal,
+  isStripeLike,
+} from "@/lib/constants"
 import { B2BCart } from "@/types"
 import { PayPalScriptProvider } from "@paypal/react-paypal-js"
-import { loadStripe } from "@stripe/stripe-js"
+import { loadStripe, Stripe } from "@stripe/stripe-js"
 import React, { createContext } from "react"
 import StripeWrapper from "./stripe-wrapper"
 
@@ -14,17 +19,24 @@ type WrapperProps = {
 
 export const StripeContext = createContext(false)
 
-const stripeKey =
-  process.env.NEXT_PUBLIC_STRIPE_KEY ||
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_KEY
+const medusaPaymentsKey =
   process.env.NEXT_PUBLIC_MEDUSA_PAYMENTS_PUBLISHABLE_KEY
 
-const medusaAccountId = process.env.NEXT_PUBLIC_MEDUSA_PAYMENTS_ACCOUNT_ID
-const stripePromise = stripeKey
-  ? loadStripe(
-      stripeKey,
-      medusaAccountId ? { stripeAccount: medusaAccountId } : undefined
+// loadStripe should only be called once per configuration, so we cache the promises.
+const stripePromises = new Map<string, Promise<Stripe | null>>()
+
+const getStripePromise = (key: string, stripeAccount?: string) => {
+  const cacheKey = `${key}:${stripeAccount ?? ""}`
+  if (!stripePromises.has(cacheKey)) {
+    stripePromises.set(
+      cacheKey,
+      loadStripe(key, stripeAccount ? { stripeAccount } : undefined)
     )
-  : null
+  }
+
+  return stripePromises.get(cacheKey)!
+}
 
 const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
@@ -32,6 +44,15 @@ const Wrapper: React.FC<WrapperProps> = ({ cart, children }) => {
   const paymentSession = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
+
+  // Medusa Payments creates the payment on the account's Stripe connected account,
+  // so Stripe.js needs to be initialized for that account.
+  const key = isMedusaPayments(paymentSession?.provider_id)
+    ? medusaPaymentsKey
+    : stripeKey
+  const stripePromise = key
+    ? getStripePromise(key, getMedusaPaymentsAccount(paymentSession))
+    : null
 
   if (
     isStripeLike(paymentSession?.provider_id) &&
@@ -42,7 +63,7 @@ const Wrapper: React.FC<WrapperProps> = ({ cart, children }) => {
       <StripeContext.Provider value={true}>
         <StripeWrapper
           paymentSession={paymentSession}
-          stripeKey={stripeKey}
+          stripeKey={key}
           stripePromise={stripePromise}
         >
           {children}

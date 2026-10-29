@@ -2,6 +2,7 @@
 
 import { isManual, isPaypal, isStripeLike } from "@/lib/constants"
 import { createCartApproval, placeOrder } from "@/lib/data/cart"
+import { getPaymentErrorMessage } from "@/lib/util/payment-error"
 import ErrorMessage from "@/modules/checkout/components/error-message"
 import Button from "@/modules/common/components/button"
 import Spinner from "@/modules/common/icons/spinner"
@@ -235,7 +236,7 @@ const StripePaymentButton = ({
             onPaymentCompleted()
           }
 
-          setErrorMessage(error.message || null)
+          setErrorMessage(getPaymentErrorMessage(error))
           return
         }
 
@@ -247,6 +248,12 @@ const StripePaymentButton = ({
         }
 
         return
+      })
+      .catch((error) => {
+        setErrorMessage(getPaymentErrorMessage(error))
+      })
+      .finally(() => {
+        setSubmitting(false)
       })
   }
 

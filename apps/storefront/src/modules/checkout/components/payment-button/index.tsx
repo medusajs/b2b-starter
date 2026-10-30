@@ -1,6 +1,6 @@
 "use client"
 
-import { isManual, isPaypal, isStripeLike } from "@/lib/constants"
+import { isAdyen, isManual, isPaypal, isStripeLike } from "@/lib/constants"
 import { createCartApproval, placeOrder } from "@/lib/data/cart"
 import { getPaymentErrorMessage } from "@/lib/util/payment-error"
 import ErrorMessage from "@/modules/checkout/components/error-message"
@@ -13,6 +13,7 @@ import { OnApproveActions, OnApproveData } from "@paypal/paypal-js"
 import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
+import AdyenPaymentButton from "./adyen-payment-button"
 
 type PaymentButtonProps = {
   cart: B2BCart
@@ -68,6 +69,14 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
     case isStripeLike(paymentSession?.provider_id):
       return (
         <StripePaymentButton
+          notReady={notReady}
+          cart={cart}
+          data-testid={dataTestId}
+        />
+      )
+    case isAdyen(paymentSession?.provider_id):
+      return (
+        <AdyenPaymentButton
           notReady={notReady}
           cart={cart}
           data-testid={dataTestId}

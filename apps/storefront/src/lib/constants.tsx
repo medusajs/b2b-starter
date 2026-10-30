@@ -44,6 +44,17 @@ const medusaPaymentsInfo = {
   icon: <CreditCard />,
 }
 
+/*
+ * Adyen registers its provider with the ID `pp_adyen_{id}`, where `{id}` is the ID set in
+ * `medusa-config.ts`. Its Drop-in offers cards, Apple Pay, and Google Pay.
+ */
+const ADYEN_PREFIX = "pp_adyen_"
+
+const adyenInfo = {
+  title: "Card, Apple Pay, or Google Pay",
+  icon: <CreditCard />,
+}
+
 export const getPaymentInfo = (providerId?: string) => {
   if (!providerId) {
     return undefined
@@ -53,7 +64,15 @@ export const getPaymentInfo = (providerId?: string) => {
     return medusaPaymentsInfo
   }
 
+  if (isAdyen(providerId)) {
+    return adyenInfo
+  }
+
   return paymentInfoMap[providerId]
+}
+
+export const isAdyen = (providerId?: string) => {
+  return !!providerId?.startsWith(ADYEN_PREFIX)
 }
 
 export const isMedusaPayments = (providerId?: string) => {

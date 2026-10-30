@@ -158,6 +158,11 @@ The repo is a pnpm workspace orchestrated by [Turborepo](https://turborepo.com).
 | `JWT_SECRET` | Secret used to sign JWT tokens |
 | `COOKIE_SECRET` | Secret used to sign session cookies |
 | `STORE_CORS` / `ADMIN_CORS` / `AUTH_CORS` | Allowed origins for the store, admin, and auth APIs |
+| `ADYEN_API_KEY` | Adyen API key. Enables Adyen payments when set |
+| `ADYEN_MERCHANT_ACCOUNT` | Adyen merchant account |
+| `ADYEN_HMAC_KEY` | HMAC key of the Adyen standard webhook, pointed to `{backend_url}/hooks/payment/adyen_adyen` |
+| `ADYEN_ENVIRONMENT` | Adyen environment, `TEST` or `LIVE` |
+| `ADYEN_LIVE_ENDPOINT_URL_PREFIX` | Adyen live endpoint prefix, required in `LIVE` |
 
 ### Storefront (`apps/storefront/.env.local`)
 
@@ -169,6 +174,8 @@ The repo is a pnpm workspace orchestrated by [Turborepo](https://turborepo.com).
 | `NEXT_PUBLIC_DEFAULT_REGION` | Default region code (e.g. `us`) |
 | `NEXT_PUBLIC_MEDUSA_PAYMENTS_PUBLISHABLE_KEY` | Medusa Payments publishable key (optional) |
 | `NEXT_PUBLIC_MEDUSA_PAYMENTS_ACCOUNT_ID` | Medusa Payments account ID (optional) |
+| `NEXT_PUBLIC_ADYEN_CLIENT_KEY` | Adyen client key (optional), when the backend sets `ADYEN_API_KEY` |
+| `NEXT_PUBLIC_ADYEN_ENVIRONMENT` | Adyen environment, `test` or `live` (optional) |
 | `REVALIDATE_SECRET` | Secret for on-demand cache revalidation |
 
 ## Building with AI Agents

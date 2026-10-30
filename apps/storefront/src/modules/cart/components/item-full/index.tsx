@@ -47,18 +47,25 @@ const ItemFull = ({
   }, [item.quantity])
 
   const handleBlur = (value: number) => {
+    if (!Number.isFinite(value)) {
+      setQuantity(item.quantity.toString())
+      return
+    }
+
     if (value === item.quantity) {
       return
     }
 
     if (value > maxQuantity) {
       changeQuantity(maxQuantity)
+      return
     }
 
     if (value < 1) {
       setUpdating(true)
       handleDeleteItem(item.id)
       setUpdating(false)
+      return
     }
 
     changeQuantity(value)
@@ -70,7 +77,7 @@ const ItemFull = ({
     }
 
     if (e.key === "Enter") {
-      changeQuantity(Number(quantity))
+      handleBlur(Number(quantity))
     }
 
     if (e.key === "ArrowUp" && e.shiftKey) {

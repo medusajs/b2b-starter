@@ -2,7 +2,6 @@ import {
   DataTable,
   DataTableFilteringState,
   DataTablePaginationState,
-  Heading,
   useDataTable,
 } from "@medusajs/ui";
 import { useMemo, useState } from "react";
@@ -53,7 +52,6 @@ export const ApprovalsTable = () => {
   return (
     <DataTable instance={table}>
       <DataTable.Toolbar className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
-        <Heading>Approvals</Heading>
         <div className="flex gap-2">
           <DataTable.FilterMenu tooltip="Filter" />
           <DataTable.Search placeholder="Search..." />

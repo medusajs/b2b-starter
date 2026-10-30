@@ -17,13 +17,12 @@ const GENERIC_ERROR =
   "We couldn't process your payment. Please try again or use a different payment method."
 
 const getAdyenSession = async (cartId: string) => {
+  // The default fields include the payment collection and its sessions. Medusa Cloud's firewall
+  // rejects a `fields` query that names `payment_collection` more than once, so none is passed.
   const { cart } = await sdk.client.fetch<HttpTypes.StoreCartResponse>(
     `/store/carts/${cartId}`,
     {
       method: "GET",
-      query: {
-        fields: "payment_collection.id,*payment_collection.payment_sessions",
-      },
       headers: { ...(await getAuthHeaders()) },
       cache: "no-store",
     }

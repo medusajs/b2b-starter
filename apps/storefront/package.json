@@ -16,12 +16,13 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
+    "@adyen/adyen-web": "^6.46.0",
     "@headlessui/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",
     "@medusajs/icons": "2.22.2",
     "@medusajs/js-sdk": "2.22.2",
     "@medusajs/types": "2.22.2",
-    "@medusajs/ui": "4.2.6",
+    "@medusajs/ui": "4.2.9",
     "@medusajs/instantsearch-adapter": "2.22.2",
     "@paypal/paypal-js": "^5.0.6",
     "@paypal/react-paypal-js": "^7.8.1",

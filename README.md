@@ -169,6 +169,8 @@ The repo is a pnpm workspace orchestrated by [Turborepo](https://turborepo.com).
 | `NEXT_PUBLIC_DEFAULT_REGION` | Default region code (e.g. `us`) |
 | `NEXT_PUBLIC_MEDUSA_PAYMENTS_PUBLISHABLE_KEY` | Medusa Payments publishable key (optional) |
 | `NEXT_PUBLIC_MEDUSA_PAYMENTS_ACCOUNT_ID` | Medusa Payments account ID (optional) |
+| `NEXT_PUBLIC_ADYEN_CLIENT_KEY` | Adyen client key (optional), when the Adyen payment provider is registered in the backend |
+| `NEXT_PUBLIC_ADYEN_ENVIRONMENT` | Adyen environment, `test` or `live` (optional) |
 | `REVALIDATE_SECRET` | Secret for on-demand cache revalidation |
 
 ## Building with AI Agents

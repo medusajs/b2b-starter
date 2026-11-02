@@ -1,7 +1,6 @@
 import {
   DataTable,
   DataTablePaginationState,
-  Heading,
   useDataTable,
 } from "@medusajs/ui";
 import { useMemo, useState } from "react";
@@ -55,7 +54,6 @@ export const QuotesTable = () => {
   return (
     <DataTable instance={table}>
       <DataTable.Toolbar className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
-        <Heading>Quotes</Heading>
         <DataTable.Search placeholder="Search..." />
       </DataTable.Toolbar>
       <DataTable.Table

@@ -47,7 +47,7 @@ const Companies = () => {
               {data.companies.map((company: QueryCompany) => (
                 <Table.Row
                   key={company.id}
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-ui-bg-base-hover"
                   onClick={() =>
                     (window.location.href = `/app/companies/${company.id}`)
                   }

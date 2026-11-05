@@ -18,7 +18,11 @@ const BulkTableQuantity = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuantity(e.target.value)
-    onChange(variantId, Number(e.target.value))
+    const parsed = Number(e.target.value)
+    onChange(
+      variantId,
+      Number.isFinite(parsed) ? Math.max(Math.floor(parsed), 0) : 0
+    )
   }
 
   const handleAdd = () => {

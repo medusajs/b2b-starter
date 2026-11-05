@@ -68,19 +68,21 @@ const ProductVariantsTable = ({
 
     setIsAdding(true)
 
-    const lineItems = Array.from(lineItemsMap.entries()).map(
-      ([variantId, { quantity, ...variant }]) => ({
+    const lineItems = Array.from(lineItemsMap.entries())
+      .filter(([, { quantity }]) => Number.isFinite(quantity) && quantity > 0)
+      .map(([variantId, { quantity, ...variant }]) => ({
         productVariant: {
           ...variant,
         },
         quantity,
-      })
-    )
+      }))
 
-    addToCartEventBus.emitCartAdd({
-      lineItems,
-      regionId: region.id,
-    })
+    if (lineItems.length > 0) {
+      addToCartEventBus.emitCartAdd({
+        lineItems,
+        regionId: region.id,
+      })
+    }
 
     setIsAdding(false)
   }

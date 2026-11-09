@@ -13,20 +13,54 @@ export const listCategories = async (
 
   const limit = query?.limit || 100
 
-  return sdk.client
-    .fetch<{ product_categories: HttpTypes.StoreProductCategory[] }>(
-      "/store/product-categories",
-      {
-        query: {
-          fields:
-            "*category_children, *products, *parent_category, *parent_category.parent_category",
-          limit,
-          ...query,
-        },
-        next,
-      }
-    )
-    .then(({ product_categories }) => product_categories)
+  const { product_categories, count } = await sdk.client.fetch<{
+    product_categories: HttpTypes.StoreProductCategory[]
+    count?: number
+  }>("/store/product-categories", {
+    query: {
+      fields:
+        "*category_children, *products, *parent_category, *parent_category.parent_category",
+      limit,
+      ...query,
+    },
+    next,
+  })
+
+  if (
+    query?.limit !== undefined ||
+    query?.offset !== undefined ||
+    typeof count !== "number" ||
+    count <= product_categories.length
+  ) {
+    return product_categories
+  }
+
+  const allCategories = [...product_categories]
+  let offset = product_categories.length
+
+  while (offset < count) {
+    const { product_categories: nextBatch } = await sdk.client.fetch<{
+      product_categories: HttpTypes.StoreProductCategory[]
+    }>("/store/product-categories", {
+      query: {
+        fields:
+          "*category_children, *products, *parent_category, *parent_category.parent_category",
+        limit,
+        offset,
+        ...query,
+      },
+      next,
+    })
+
+    if (!nextBatch.length) {
+      break
+    }
+
+    allCategories.push(...nextBatch)
+    offset += nextBatch.length
+  }
+
+  return allCategories
 }
 
 export const getCategoryByHandle = async (
@@ -43,7 +77,8 @@ export const getCategoryByHandle = async (
       `/store/product-categories`,
       {
         query: {
-          fields: "*category_children, *products",
+          fields:
+            "*category_children, *products, *parent_category, *parent_category.parent_category",
           handle,
         },
         next,

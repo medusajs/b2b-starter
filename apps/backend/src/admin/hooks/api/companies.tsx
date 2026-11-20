@@ -89,14 +89,14 @@ export const useCreateCompany = (
         },
         body: company,
       }),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.lists(),
       });
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.detail(data.id),
       });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -121,14 +121,14 @@ export const useUpdateCompany = (
         },
         body: company,
       }),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.lists(),
       });
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.detail(companyId),
       });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -144,11 +144,11 @@ export const useDeleteCompany = (
       sdk.client.fetch<void>(`/admin/companies/${companyId}`, {
         method: "DELETE",
       }),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.lists(),
       });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -169,14 +169,14 @@ export const useAddCompanyToCustomerGroup = (
         },
         body: { group_id: groupId },
       }),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.lists(),
       });
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.detail(companyId),
       });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -190,7 +190,7 @@ export const useRemoveCompanyFromCustomerGroup = (
 
   return useMutation({
     mutationFn: (groupId: string) =>
-      sdk.client.fetch(
+      sdk.client.fetch<void>(
         `/admin/companies/${companyId}/customer-group/${groupId}`,
         {
           method: "DELETE",
@@ -199,14 +199,14 @@ export const useRemoveCompanyFromCustomerGroup = (
           },
         }
       ),
-    onSuccess: (_, variables: any, context: any) => {
+    onSuccess: (_, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.lists(),
       });
       queryClient.invalidateQueries({
         queryKey: companyQueryKey.detail(companyId),
       });
-      options?.onSuccess?.(undefined, variables, context);
+      options?.onSuccess?.(undefined, variables, onMutateResult, context);
     },
     ...options,
   });

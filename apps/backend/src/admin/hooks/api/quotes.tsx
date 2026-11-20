@@ -87,12 +87,12 @@ export const useAddItemsToQuote = (
   return useMutation({
     mutationFn: (payload: HttpTypes.AdminAddOrderEditItems) =>
       sdk.admin.orderEdit.addItems(id, payload),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.detail(id),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -115,12 +115,12 @@ export const useUpdateQuoteItem = (
     }: HttpTypes.AdminUpdateOrderEditItem & { itemId: string }) => {
       return sdk.admin.orderEdit.updateOriginalItem(id, itemId, payload);
     },
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.detail(id),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -139,11 +139,11 @@ export const useRemoveQuoteItem = (
   return useMutation({
     mutationFn: (actionId: string) =>
       sdk.admin.orderEdit.removeAddedItem(id, actionId),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.detail(id),
       });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -166,12 +166,12 @@ export const useUpdateAddedQuoteItem = (
     }: HttpTypes.AdminUpdateOrderEditItem & { actionId: string }) => {
       return sdk.admin.orderEdit.updateAddedItem(id, actionId, payload);
     },
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.detail(id),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -189,12 +189,12 @@ export const useConfirmQuote = (
 
   return useMutation({
     mutationFn: () => sdk.admin.orderEdit.request(id),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.details(),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -213,7 +213,7 @@ export const useSendQuote = (
 
   return useMutation({
     mutationFn: () => sendQuote(id),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.details(),
       });
@@ -226,7 +226,7 @@ export const useSendQuote = (
         queryKey: quoteQueryKey.lists(),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -245,7 +245,7 @@ export const useRejectQuote = (
 
   return useMutation({
     mutationFn: () => rejectQuote(id),
-    onSuccess: (data: AdminQuoteResponse, variables: any, context: any) => {
+    onSuccess: (data: AdminQuoteResponse, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: orderPreviewQueryKey.details(),
       });
@@ -258,7 +258,7 @@ export const useRejectQuote = (
         queryKey: quoteQueryKey.lists(),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -282,12 +282,12 @@ export const useCreateQuoteMessage = (
 
   return useMutation({
     mutationFn: (body) => sendQuote(id, body),
-    onSuccess: (data: AdminQuoteResponse, variables: any, context: any) => {
+    onSuccess: (data: AdminQuoteResponse, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: quoteQueryKey.details(),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

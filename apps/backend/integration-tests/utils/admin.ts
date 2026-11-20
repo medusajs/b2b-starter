@@ -4,7 +4,6 @@ import {
 } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
 import jwt from "jsonwebtoken";
-import Scrypt from "scrypt-kdf";
 
 export const adminHeaders = {
   headers: {},
@@ -19,17 +18,11 @@ export const createAdminUser = async (adminHeaders, appContainer) => {
     email: "admin@medusa.js",
   });
 
-  const hashConfig = { logN: 15, r: 8, p: 1 };
-  const passwordHash = await Scrypt.kdf("somepassword", hashConfig);
-
   const authIdentity = await authModule.createAuthIdentities({
     provider_identities: [
       {
         provider: "emailpass",
         entity_id: "admin@medusa.js",
-        provider_metadata: {
-          password: passwordHash.toString("base64"),
-        },
       },
     ],
     app_metadata: {
@@ -43,7 +36,7 @@ export const createAdminUser = async (adminHeaders, appContainer) => {
       actor_type: "user",
       auth_identity_id: authIdentity.id,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET!,
     {
       expiresIn: "1d",
     }

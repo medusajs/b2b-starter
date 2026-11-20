@@ -38,7 +38,7 @@ export const useUpdateApprovalSettings = (
           method: "POST",
         }
       ),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: approvalSettingsQueryKey.detail(companyId),
       });
@@ -47,7 +47,7 @@ export const useUpdateApprovalSettings = (
         queryKey: companyQueryKey.detail(companyId),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });
@@ -84,12 +84,12 @@ export const useUpdateApproval = (
         body: payload,
         method: "POST",
       }),
-    onSuccess: (data: any, variables: any, context: any) => {
+    onSuccess: (data: any, variables: any, onMutateResult: any, context: any) => {
       queryClient.invalidateQueries({
         queryKey: approvalQueryKey.lists(),
       });
 
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

@@ -18,7 +18,6 @@ import {
 jest.setTimeout(60 * 1000);
 
 medusaIntegrationTestRunner({
-  inApp: true,
   env: {
     JWT_SECRET: "supersecret",
   },

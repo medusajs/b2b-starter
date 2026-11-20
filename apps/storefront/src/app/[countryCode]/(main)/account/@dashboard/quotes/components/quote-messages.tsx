@@ -124,7 +124,7 @@ const QuoteMessages = ({
                 name="item_id"
                 control={control}
                 render={({ field: { onChange, ref, value, ...field } }) => (
-                  <Select {...field} onValueChange={onChange} value={value}>
+                  <Select {...field} onValueChange={onChange} value={value ?? undefined}>
                     <Select.Trigger className="bg-ui-bg-base" ref={ref}>
                       <Select.Value />
                       {value ? <Select.Value /> : "Select Item"}

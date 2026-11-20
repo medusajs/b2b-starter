@@ -201,7 +201,7 @@ function ManageItem({
         </div>
 
         <div className="flex flex-1 justify-between">
-          <div className="flex flex-grow items-center gap-2">
+          <div className="flex grow items-center gap-2">
             <Input
               className="bg-ui-bg-base txt-small w-[67px] rounded-lg [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               type="number"
@@ -222,7 +222,7 @@ function ManageItem({
             </Text>
           </div>
 
-          <div className="text-ui-fg-subtle txt-small mr-2 flex flex-shrink-0">
+          <div className="text-ui-fg-subtle txt-small mr-2 flex shrink-0">
             <AmountCell
               currencyCode={currencyCode}
               amount={item.total}
@@ -278,7 +278,7 @@ function ManageItem({
           </div>
 
           <div className="flex items-center gap-1">
-            <div className="flex-grow">
+            <div className="grow">
               <Form.Field
                 name={`inbound_items.${item.id}.unit_price`}
                 render={({ field: { ref, ...field } }) => {

@@ -23,5 +23,5 @@ export type StoreCreateQuote = {
 
 export type StoreCreateQuoteMessage = {
   text: string;
-  item_id?: string;
+  item_id?: string | null;
 };

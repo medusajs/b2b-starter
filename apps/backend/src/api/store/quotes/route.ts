@@ -5,6 +5,7 @@ import {
 import { RemoteQueryFunction } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import { createRequestForQuoteWorkflow } from "../../../workflows/quote/workflows/create-request-for-quote";
+import { ensureCartOwner } from "../../middlewares/ensure-cart-owner";
 import { CreateQuoteType, GetQuoteParamsType } from "./validators";
 
 export const GET = async (
@@ -43,6 +44,8 @@ export const POST = async (
   const query = req.scope.resolve<RemoteQueryFunction>(
     ContainerRegistrationKeys.QUERY
   );
+
+  await ensureCartOwner(req, req.validatedBody.cart_id);
 
   const {
     result: { quote: createdQuote },

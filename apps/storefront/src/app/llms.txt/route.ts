@@ -4,13 +4,13 @@ import { listRegions } from "@/lib/data/regions"
 import { UCP_MCP_PATH, UCP_REST_BASE_PATH } from "@/lib/ucp/ucp"
 import {
   getDefaultCountryCode,
-  getRequestOrigin,
+  getDiscoveryResponseConfig,
   listCountryCodes,
   STORE_NAME,
 } from "@/lib/util/site"
 
 export async function GET(request: Request) {
-  const origin = getRequestOrigin(request)
+  const { origin, cacheControl } = getDiscoveryResponseConfig(request, 3600)
 
   const [regions, categories, { collections }] = await Promise.all([
     listRegions(),
@@ -73,7 +73,7 @@ ${links.join("\n")}
   return new Response(body, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": cacheControl,
     },
   })
 }

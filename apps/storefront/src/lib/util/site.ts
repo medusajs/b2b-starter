@@ -23,6 +23,15 @@ export const getRequestOrigin = (request: Request): string =>
   originFromHeaders((name) => request.headers.get(name)) ||
   new URL(request.url).origin
 
+/** Cache discovery responses only when their origin is independent of the request. */
+export const getDiscoveryResponseConfig = (request: Request, maxAge: number) => {
+  const canonicalOrigin = configuredUrl()
+  return {
+    origin: canonicalOrigin || new URL(request.url).origin,
+    cacheControl: canonicalOrigin ? `public, max-age=${maxAge}` : "no-store",
+  }
+}
+
 /** Origin for absolute URLs in server components (canonical, JSON-LD, OpenGraph). */
 export const getSiteOrigin = async (): Promise<string> => {
   const configured = configuredUrl()

@@ -4,10 +4,10 @@ import {
   UCP_REST_BASE_PATH,
   UCP_VERSION,
 } from "@/lib/ucp/ucp"
-import { getRequestOrigin } from "@/lib/util/site"
+import { getDiscoveryResponseConfig } from "@/lib/util/site"
 
 export const GET = (request: Request) => {
-  const origin = getRequestOrigin(request)
+  const { origin, cacheControl } = getDiscoveryResponseConfig(request, 300)
   const overview = `https://ucp.dev/${UCP_VERSION}/specification/overview/`
 
   const capabilities = Object.fromEntries(
@@ -55,7 +55,7 @@ export const GET = (request: Request) => {
     },
     {
       headers: {
-        "Cache-Control": "public, max-age=300",
+        "Cache-Control": cacheControl,
         "Access-Control-Allow-Origin": "*",
       },
     }

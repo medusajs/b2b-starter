@@ -105,6 +105,48 @@ medusaIntegrationTestRunner({
       });
     });
 
+    it("enforces quote and source cart ownership across customers", async () => {
+      const { data: { quote } } = await api.post(
+        "/store/quotes",
+        { cart_id: cart.id },
+        storeHeaders
+      );
+
+      const { token } = await createStoreUser({
+        api,
+        storeHeaders,
+        email: "other-quote-customer@example.com",
+      });
+      const otherHeaders = {
+        headers: { ...storeHeaders.headers, Authorization: `Bearer ${token}` },
+      };
+
+      await expect(
+        api.post("/store/quotes", { cart_id: cart.id }, otherHeaders)
+      ).rejects.toMatchObject({ response: { status: 404 } });
+
+      const quotePath = `/store/quotes/${quote.id}`;
+
+      await expect(
+        api.get(`${quotePath}/preview`, otherHeaders)
+      ).rejects.toMatchObject({ response: { status: 404 } });
+
+      await expect(
+        api.post(`${quotePath}/accept`, {}, otherHeaders)
+      ).rejects.toMatchObject({ response: { status: 404 } });
+
+      await expect(
+        api.post(`${quotePath}/reject`, {}, otherHeaders)
+      ).rejects.toMatchObject({ response: { status: 404 } });
+
+      await expect(
+        api.post(`${quotePath}/messages`, { text: "Test message" }, otherHeaders)
+      ).rejects.toMatchObject({ response: { status: 404 } });
+
+      const ownerPreview = await api.get(`${quotePath}/preview`, storeHeaders);
+      expect(ownerPreview.status).toEqual(200);
+    });
+
     describe("GET /store/quotes/:id", () => {
       it("successfully retrieves a quote", async () => {
         const {

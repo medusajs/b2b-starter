@@ -12,10 +12,9 @@ import { ApprovalStatusType } from "@/types"
 import { RadioGroup } from "@headlessui/react"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Container, Heading, Text, clx } from "@medusajs/ui"
-import { CardElement } from "@stripe/react-stripe-js"
-import { StripeCardElementOptions } from "@stripe/stripe-js"
+import { PaymentElement } from "@stripe/react-stripe-js"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { useCallback, useContext, useEffect, useState } from "react"
 
 const Payment = ({
   cart,
@@ -30,7 +29,7 @@ const Payment = ({
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cardBrand, setCardBrand] = useState<string | null>(null)
+  const [stripeMethodType, setStripeMethodType] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? ""
@@ -51,23 +50,6 @@ const Payment = ({
 
   const paymentReady =
     (activeSession && cart?.shipping_methods.length !== 0) || paidByGiftcard
-
-  const useOptions: StripeCardElementOptions = useMemo(() => {
-    return {
-      style: {
-        base: {
-          fontFamily: "Inter, sans-serif",
-          color: "#424270",
-          "::placeholder": {
-            color: "rgb(107 114 128)",
-          },
-        },
-      },
-      classes: {
-        base: "pt-3 pb-1 block w-full h-11 px-4 mt-0 bg-ui-bg-field border rounded-md appearance-none focus:outline-none focus:ring-0 focus:shadow-borders-interactive-with-active border-ui-border-base hover:bg-ui-bg-field-hover transition-all duration-300 ease-in-out",
-      },
-    }
-  }, [])
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -174,18 +156,23 @@ const Payment = ({
               {stripeReady && isCardPayment(selectedPaymentMethod) && (
                 <div className="mt-5 transition-all duration-150 ease-in-out">
                   <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                    Enter your card details:
+                    Enter your payment details:
                   </Text>
 
-                  <CardElement
-                    options={useOptions as StripeCardElementOptions}
+                  {/* Shows the payment methods the Stripe account has turned on, such as cards, wallets and bank redirects. */}
+                  <PaymentElement
+                    options={{ layout: "accordion" }}
                     onChange={(e) => {
-                      setCardBrand(
-                        e.brand &&
-                          e.brand.charAt(0).toUpperCase() + e.brand.slice(1)
-                      )
-                      setError(getPaymentErrorMessage(e.error))
+                      setStripeMethodType(e.value.type)
+                      setError(null)
                       setCardComplete(e.complete)
+                    }}
+                    onLoadError={(e) => {
+                      setCardComplete(false)
+                      setError(
+                        getPaymentErrorMessage(e.error) ??
+                          "Could not load the payment methods."
+                      )
                     }}
                   />
                 </div>
@@ -222,7 +209,7 @@ const Payment = ({
               data-testid="submit-payment-button"
             >
               {!activeSession && isStripeLike(selectedPaymentMethod)
-                ? " Enter card details"
+                ? "Enter payment details"
                 : "Next step"}
             </Button>
           </div>
@@ -251,8 +238,8 @@ const Payment = ({
                     )}
                   </Container>
                   <Text>
-                    {isStripeLike(selectedPaymentMethod) && cardBrand
-                      ? cardBrand
+                    {isStripeLike(selectedPaymentMethod) && stripeMethodType
+                      ? formatStripeMethodType(stripeMethodType)
                       : getPaymentInfo(selectedPaymentMethod)?.title}
                   </Text>
                 </div>
@@ -275,6 +262,12 @@ const Payment = ({
       </div>
     </Container>
   )
+}
+
+// Turns a Stripe payment method type, such as `card` or `apple_pay`, into a label.
+const formatStripeMethodType = (type: string) => {
+  const label = type.replace(/_/g, " ")
+  return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
 export default Payment

@@ -8,10 +8,23 @@ import {
   validateAndTransformQuery,
 } from "@medusajs/framework";
 import { MiddlewareRoute } from "@medusajs/medusa";
-import { ensureRole } from "../../middlewares/ensure-role";
+import { getCompanyMembership } from "../../middlewares/ensure-company-access";
 import { ApprovalType } from "../../../types/approval";
 import { approvalTransformQueryConfig } from "./query-config";
 import { StoreGetApprovals, StoreUpdateApproval } from "./validators";
+
+const ensureCompanyAdmin = async (
+  req: AuthenticatedMedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  if (!(await getCompanyMembership(req))?.is_admin) {
+    res.status(403).json({ message: "Forbidden" });
+    return;
+  }
+
+  next();
+};
 
 const ensureApprovalType = async (
   req: AuthenticatedMedusaRequest,
@@ -26,7 +39,7 @@ const ensureApprovalType = async (
     data: [approval],
   } = await query.graph({
     entity: "approval",
-    fields: ["type"],
+    fields: ["type", "cart.company.id", "cart.customer.employee.company_id"],
     filters: { id },
   });
 
@@ -37,7 +50,13 @@ const ensureApprovalType = async (
 
   const approvalType = approval.type as unknown as ApprovalType;
 
-  if (approvalType !== ApprovalType.ADMIN) {
+  const employee = await getCompanyMembership(req);
+  if (
+    approvalType !== ApprovalType.ADMIN ||
+    !employee?.company_id ||
+    employee.company_id !== approval.cart?.company?.id ||
+    employee.company_id !== approval.cart?.customer?.employee?.company_id
+  ) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }
@@ -51,7 +70,7 @@ export const storeApprovalsMiddlewares: MiddlewareRoute[] = [
     matcher: "/store/approvals*",
     middlewares: [
       authenticate("customer", ["session", "bearer"]),
-      ensureRole("company_admin"),
+      ensureCompanyAdmin,
     ],
   },
   {

@@ -38,7 +38,7 @@ export const POST = async (
   await updateCompaniesWorkflow.run({
     input: {
       id,
-      ...req.body,
+      ...req.validatedBody,
     },
     container: req.scope,
   });

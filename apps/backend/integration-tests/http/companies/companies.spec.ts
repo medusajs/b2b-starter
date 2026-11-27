@@ -31,9 +31,7 @@ medusaIntegrationTestRunner({
       storeHeaders = generateStoreHeaders({ publishableKey });
       const res = await createStoreUser({ api, storeHeaders });
       customerToken = res.token;
-      console.log("vic logs customerToken", customerToken);
       storeHeaders.headers["Authorization"] = `Bearer ${customerToken}`;
-      console.log("vic logs storeHeaders", storeHeaders);
       region = await regionSeeder({ api, adminHeaders, data: {} });
 
       salesChannel = await salesChannelSeeder({
@@ -104,6 +102,54 @@ medusaIntegrationTestRunner({
       });
     });
 
+    it("denies access to a company outside the customer's membership", async () => {
+      const { data: { companies: [company] } } = await api.post(
+        "/store/companies",
+        { name: "Owner company", email: "owner@example.com", currency_code: "USD" },
+        storeHeaders
+      );
+      expect(company.employees).toEqual([
+        expect.objectContaining({ id: expect.any(String), is_admin: true }),
+      ]);
+
+      const { token } = await createStoreUser({
+        api,
+        storeHeaders,
+        email: "other@example.com",
+      });
+      const otherHeaders = {
+        headers: { ...storeHeaders.headers, Authorization: `Bearer ${token}` },
+      };
+
+      const { data: { companies: [otherCompany] } } = await api.post(
+        "/store/companies",
+        { name: "Other company", email: "other@example.com", currency_code: "USD" },
+        otherHeaders
+      );
+
+      await expect(api.get(
+        `/store/companies/${company.id}`,
+        otherHeaders
+      )).rejects.toMatchObject({ response: { status: 403 } });
+
+      await expect(api.post(
+        `/store/companies/${company.id}`,
+        { name: "Unauthorised update" },
+        otherHeaders
+      )).rejects.toMatchObject({ response: { status: 403 } });
+
+      await expect(api.get(
+        `/store/companies/${otherCompany.id}/employees/${company.employees[0].id}`,
+        otherHeaders
+      )).rejects.toMatchObject({ response: { status: 404 } });
+
+      const ownedCompany = await api.get(
+        `/store/companies/${company.id}`,
+        storeHeaders
+      );
+      expect(ownedCompany.status).toEqual(200);
+    });
+
     describe("GET /store/companies/:id", () => {
       it("successfully retrieves a company", async () => {
         const response1 = await api.post(
@@ -149,9 +195,7 @@ medusaIntegrationTestRunner({
           .get(`/store/companies/does-not-exist`, storeHeaders)
           .catch((e) => e);
 
-        expect(response.data).toMatchObject({
-          type: "not_found",
-        });
+        expect(response.status).toEqual(403);
       });
     });
 
@@ -223,14 +267,11 @@ medusaIntegrationTestRunner({
           )
           .catch((e) => e);
 
-        expect(response.data).toMatchObject({
-          type: "not_found",
-        });
+        expect(response.status).toEqual(403);
       });
     });
 
     describe("DELETE /store/companies/:id", () => {
-      console.log("vic logs storeHeaders", storeHeaders);
       let company1;
 
       beforeEach(async () => {
@@ -269,7 +310,7 @@ medusaIntegrationTestRunner({
           .delete(`/store/companies/does-not-exist`, storeHeaders)
           .catch((e) => e);
 
-        expect(response.status).toEqual(204);
+        expect(response.status).toEqual(403);
       });
     });
   },

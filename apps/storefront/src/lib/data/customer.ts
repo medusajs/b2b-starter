@@ -8,7 +8,7 @@ import { track } from "@vercel/analytics/server"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { retrieveCart, updateCart } from "./cart"
-import { createCompany, createEmployee } from "./companies"
+import { createCompany } from "./companies"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -90,7 +90,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
       password,
     })
 
-    setAuthToken(loginToken as string)
+    await setAuthToken(loginToken as string)
 
     const companyForm = {
       name: formData.get("company_name") as string,
@@ -106,15 +106,6 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
     const createdCompany = await createCompany(companyForm)
 
-    const createdEmployee = await createEmployee({
-      company_id: createdCompany?.id as string,
-      customer_id: createdCustomer.id,
-      is_admin: true,
-      spending_limit: 0,
-    }).catch((err) => {
-      console.log("error creating employee", err)
-    })
-
     const cacheTag = await getCacheTag("customers")
     revalidateTag(cacheTag, { expire: 0 })
 
@@ -123,7 +114,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
     return {
       customer: createdCustomer,
       company: createdCompany,
-      employee: createdEmployee,
+      employee: createdCompany.employees?.find((employee) => employee.is_admin),
     }
   } catch (error: any) {
     console.log("error", error)

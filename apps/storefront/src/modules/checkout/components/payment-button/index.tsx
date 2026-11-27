@@ -12,6 +12,7 @@ import { Container, Text, toast } from "@medusajs/ui"
 import { OnApproveActions, OnApproveData } from "@paypal/paypal-js"
 import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
+import { useParams } from "next/navigation"
 import React, { useState } from "react"
 import AdyenPaymentButton from "./adyen-payment-button"
 
@@ -196,43 +197,44 @@ const StripePaymentButton = ({
 
   const stripe = useStripe()
   const elements = useElements()
-  const card = elements?.getElement("card")
-
-  const session = cart.payment_collection?.payment_sessions?.find(
-    (s) => s.status === "pending"
-  )
+  const { countryCode } = useParams()
 
   const disabled = !stripe || !elements ? true : false
 
   const handlePayment = async () => {
     setSubmitting(true)
 
-    if (!stripe || !elements || !card || !cart) {
+    if (!stripe || !elements || !cart) {
       setSubmitting(false)
       return
     }
 
     await stripe
-      .confirmCardPayment(session?.data.client_secret as string, {
-        payment_method: {
-          card: card,
-          billing_details: {
-            name:
-              cart.billing_address?.first_name +
-              " " +
-              cart.billing_address?.last_name,
-            address: {
-              city: cart.billing_address?.city ?? undefined,
-              country: cart.billing_address?.country_code ?? undefined,
-              line1: cart.billing_address?.address_1 ?? undefined,
-              line2: cart.billing_address?.address_2 ?? undefined,
-              postal_code: cart.billing_address?.postal_code ?? undefined,
-              state: cart.billing_address?.province ?? undefined,
+      .confirmPayment({
+        elements,
+        confirmParams: {
+          // Methods that leave the site, such as iDEAL or Klarna, return the customer here to place the order.
+          return_url: `${window.location.origin}/api/payment-return?cart_id=${cart.id}&country_code=${countryCode}`,
+          payment_method_data: {
+            billing_details: {
+              name:
+                cart.billing_address?.first_name +
+                " " +
+                cart.billing_address?.last_name,
+              address: {
+                city: cart.billing_address?.city ?? undefined,
+                country: cart.billing_address?.country_code ?? undefined,
+                line1: cart.billing_address?.address_1 ?? undefined,
+                line2: cart.billing_address?.address_2 ?? undefined,
+                postal_code: cart.billing_address?.postal_code ?? undefined,
+                state: cart.billing_address?.province ?? undefined,
+              },
+              email: cart.email,
+              phone: cart.billing_address?.phone ?? undefined,
             },
-            email: cart.email,
-            phone: cart.billing_address?.phone ?? undefined,
           },
         },
+        redirect: "if_required",
       })
       .then(({ error, paymentIntent }) => {
         if (error) {
